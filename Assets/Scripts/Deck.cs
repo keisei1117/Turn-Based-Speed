@@ -76,23 +76,28 @@ public class Deck : MonoBehaviour
         AnimationManager.Instance.AddPlayingAnimation(ShuffleAnimation, true);
     }
 
-
-
-    // XXX: 表示されない
     IEnumerator<bool> ShuffleAnimation()
     {
-        Debug.Log("ShuffleAnimation start");
-        yield return false;
-
         Image animCard1 = Instantiate(m_image, this.GetComponentInChildren<Canvas>().transform, false);
         Image animCard2 = Instantiate(m_image, this.GetComponentInChildren<Canvas>().transform, false);
+        Image animCard3 = Instantiate(m_image, this.GetComponentInChildren<Canvas>().transform, false);
         animCard1.name = "animCard1";
         animCard2.name = "animCard2";
+        animCard3.name = "animCard3";
+        animCard1.enabled = true;
+        animCard2.enabled = true;
+        animCard3.enabled = true;
+
 
         const float distance = 0.2f;
         const int loopCount = 10;
         for (int i = 0; i < 3; i++)
         {
+            // 表示における上下関係の設定
+            animCard3.transform.SetAsFirstSibling();
+            animCard1.transform.SetAsFirstSibling();
+            animCard2.transform.SetAsFirstSibling();
+
             for (int j = 0; j < loopCount; j++)
             {
                 animCard1.transform.Translate(distance, 0f, 0f);
@@ -100,11 +105,10 @@ public class Deck : MonoBehaviour
                 yield return false;
             }
 
-            Debug.Log("ShuffleAnimation step1" + "  i:" + i);
-
+            // 表示における上下関係の設定
             animCard1.transform.SetAsFirstSibling();
             animCard2.transform.SetAsFirstSibling();
-            m_image.transform.SetAsFirstSibling();
+            animCard3.transform.SetAsFirstSibling();
 
             for (int j = 0; j < loopCount; j++)
             {
@@ -112,19 +116,13 @@ public class Deck : MonoBehaviour
                 animCard2.transform.Translate(distance, 0f, 0f);
                 yield return false;
             }
-
-            Debug.Log("ShuffleAnimation step2");
-
-            m_image.transform.SetAsFirstSibling();
-            animCard1.transform.SetAsFirstSibling();
-            animCard2.transform.SetAsFirstSibling();
         }
 
-        // XXX: 削除されない
+        // XXX: 削除されない 
+        // ↑Unity で見たら残ってるけど消えてるのかもしれない。
         Destroy(animCard1);
         Destroy(animCard2);
-        Debug.Log(animCard1);
-        Debug.Log(animCard2);
+        Destroy(animCard3);
 
         Debug.Log("ShuffleAnimation end");
         yield return true;

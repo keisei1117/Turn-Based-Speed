@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public class Deck : MonoBehaviour
 {
-    //public RectTransform m_image;
     [SerializeField] private Image m_image;
     public List<Card> m_cards { get; private set; }
 
@@ -73,10 +72,10 @@ public class Deck : MonoBehaviour
 
         m_cards = ShuffledCards;
 
-        AnimationManager.Instance.AddPlayingAnimation(ShuffleAnimation, true);
+        AnimationManager.Instance.AddPlayingAnimation(Anim_Shuffle(), true);
     }
 
-    IEnumerator<bool> ShuffleAnimation()
+    IEnumerator<bool> Anim_Shuffle()
     {
         Image animCard1 = Instantiate(m_image, this.GetComponentInChildren<Canvas>().transform, false);
         Image animCard2 = Instantiate(m_image, this.GetComponentInChildren<Canvas>().transform, false);
@@ -119,12 +118,11 @@ public class Deck : MonoBehaviour
         }
 
         // XXX: çÌèúÇ≥ÇÍÇ»Ç¢ 
-        // Å™Unity Ç≈å©ÇΩÇÁécÇ¡ÇƒÇÈÇØÇ«è¡Ç¶ÇƒÇÈÇÃÇ©Ç‡ÇµÇÍÇ»Ç¢ÅB
         Destroy(animCard1);
         Destroy(animCard2);
         Destroy(animCard3);
 
-        Debug.Log("ShuffleAnimation end");
+        Debug.Log("Anim_Shuffle end");
         yield return true;
     }
 }

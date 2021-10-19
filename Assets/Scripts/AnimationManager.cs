@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class AnimationManager : MonoBehaviour
 {
+    // シングルトン実装
     private static AnimationManager instance;
     public static AnimationManager Instance
     {
@@ -14,20 +15,32 @@ public class AnimationManager : MonoBehaviour
                 instance = (AnimationManager)FindObjectOfType(typeof(AnimationManager));
                 if (null == instance)
                 {
-                    Debug.Log(" DataManager Instance Error ");
+                    Debug.Log(" AnimationManager Instance Error ");
                 }
             }
             return instance;
         }
     }
 
+    // アニメーションを行うメソッドの戻り値(IEnumerator<bool>)と待ちフレーム数をセットで保持する
+    public class MethodAndWaitFrames
+    {
+        public IEnumerator<bool> method;
+        // 待ちフレーム数
+        public int waitFrames;
 
-    public delegate IEnumerator<bool> AnimMethod();
-    static List<List<IEnumerator<bool>>> m_animMethods;
+        public MethodAndWaitFrames(IEnumerator<bool> method, int waitFrames)
+        {
+            this.method = method;
+            this.waitFrames = waitFrames;
+        }
+    }
+
+    static List<List<MethodAndWaitFrames>> m_animMethods;
 
     private void Awake()
     {
-        m_animMethods = new List<List<IEnumerator<bool>>>();
+        m_animMethods = new List<List<MethodAndWaitFrames>>();
     }
 
     // Start is called before the first frame update
@@ -51,35 +64,62 @@ public class AnimationManager : MonoBehaviour
 
         for (int i = 0; i < m_animMethods[0].Count; i++)
         {
-            m_animMethods[0][i].MoveNext();
+            bool shouldWait = m_animMethods[0][i].waitFrames != 0;
+            if (shouldWait)
+            {
+                m_animMethods[0][i].waitFrames--;
+            }
+            else
+            {
+                m_animMethods[0][i].method.MoveNext();
+            }
 
-            if (m_animMethods[0][i].Current)
+            bool isEnd = m_animMethods[0][i].method.Current;
+            if (isEnd)
             {
                 m_animMethods[0].RemoveAt(i);
                 Debug.Log("animMethods remove");
             }
         }
-        if (m_animMethods[0].Count == 0)
+
+        bool isEmptyList = m_animMethods[0].Count == 0;
+        if (isEmptyList)
         {
             m_animMethods.RemoveAt(0);
         }
     }
 
-    public void AddPlayingAnimation(AnimMethod method, bool ifWait)
+    public void AddPlayingAnimation(IEnumerator<bool> retValOfAnimMethod, bool waitFormerAnimation, int waitFrames = 0)
     {
         Debug.Log("AddPlayingAnimation");
-        if (ifWait)
+        MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
+        if (waitFormerAnimation)
         {
-            m_animMethods.Add(new List<IEnumerator<bool>>());
-            m_animMethods[m_animMethods.Count-1].Add(method());
+            m_animMethods.Add(new List<MethodAndWaitFrames>());
+            m_animMethods[m_animMethods.Count - 1].Add(additionalMethod);
         }
         else
         {
-            m_animMethods[0].Add(method());
+            m_animMethods[0].Add(additionalMethod);
         }
     }
 
-    public bool IfAnimationPlaying()
+    public void AddPlayingAnimationList(List<MethodAndWaitFrames> animList, bool waitFormerAnimation)
+    {
+        Debug.Log("AddPlayingAnimationList");
+        if (waitFormerAnimation)
+        {
+            m_animMethods.Add(new List<MethodAndWaitFrames>());
+            m_animMethods[m_animMethods.Count - 1].AddRange(animList);
+
+        }
+        else
+        {
+            m_animMethods[0].AddRange(animList);
+        }
+    }
+
+    public bool IsAllAnimationEnd()
     {
         if (m_animMethods.Count == 0)
         {

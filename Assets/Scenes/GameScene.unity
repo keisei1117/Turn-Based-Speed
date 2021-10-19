@@ -231,6 +231,7 @@ MonoBehaviour:
   m_MyHand: {fileID: 6110313392621210868}
   m_OppoHand: {fileID: 1937812005}
   m_AnimatinoManager: {fileID: 737907072}
+  m_ImageCardPrefab: {fileID: 659540207005596476, guid: 9be9e888a3027674e8aaa831cccb76ea, type: 3}
 --- !u!4 &425787187
 Transform:
   m_ObjectHideFlags: 0
@@ -482,7 +483,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7387115592815023390, guid: b25b887de42c487469ede7ce28707cdc, type: 3}
       propertyPath: m_Name
-      value: ImageCard1
+      value: ImageCard
       objectReference: {fileID: 0}
     - target: {fileID: 8441387942766248158, guid: b25b887de42c487469ede7ce28707cdc, type: 3}
       propertyPath: m_Name

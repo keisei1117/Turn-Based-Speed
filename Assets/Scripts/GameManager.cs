@@ -1,12 +1,30 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 using System;
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject m_RootDeck;
+    private static GameManager instance;
+    public static GameManager Instance {
+        get
+        {
+            if(instance == null)
+            {
+                instance = (GameManager)FindObjectOfType(typeof(GameManager));
+                if(instance == null)
+                {
+                    Debug.Log(" GameManager Instance Error ");
+                }
+            }
+            return instance;
+        }
+    }
+
+
+public GameObject m_RootDeck;
     public GameObject m_MyDeck;
     public GameObject m_OppoDeck;
     public GameObject m_RightTrush;
@@ -16,10 +34,12 @@ public class GameManager : MonoBehaviour
 
     public GameObject m_AnimatinoManager;
 
+    public Image m_ImageCardPrefab;
+
     enum GameMode
     {
         STANDBY,
-        SETTING,
+        START,
         PLAYING,
         POUSE,
         WAITING_ANIMATION,
@@ -39,7 +59,7 @@ public class GameManager : MonoBehaviour
             throw new NullReferenceException("Game Object instance is null.");
         }
 
-        m_nowMode = GameMode.SETTING;
+        m_nowMode = GameMode.START;
         m_preMode = GameMode.STANDBY;
     }
 
@@ -47,11 +67,6 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         Card.LoadImages();
-        //MakeAllCardsToRootDeck();
-        ////m_RootDeck.GetComponent<Deck>().LogNowOrder();
-        //m_RootDeck.GetComponent<Deck>().Shuffle();
-        ////m_RootDeck.GetComponent<Deck>().LogNowOrder();
-        //MakeMyOppoDeck();
     }
 
     // Update is called once per frame
@@ -59,13 +74,10 @@ public class GameManager : MonoBehaviour
     {
         switch (m_nowMode)
         {
-            case GameMode.SETTING:
-                Debug.Log("Gamemode: SETTING");
-
+            case GameMode.START:
+                Debug.Log("Gamemode: START");
                 MakeAllCardsToRootDeck();
-                //m_RootDeck.GetComponent<Deck>().LogNowOrder();
                 m_RootDeck.GetComponent<Deck>().Shuffle();
-                //m_RootDeck.GetComponent<Deck>().LogNowOrder();
                 MakeMyOppoDeck();
 
                 m_nowMode = GameMode.WAITING_ANIMATION;
@@ -73,13 +85,20 @@ public class GameManager : MonoBehaviour
 
             case GameMode.WAITING_ANIMATION:
                 Debug.Log("Gamemode: WAITING_ANIMATION");
-                if (!m_AnimatinoManager.GetComponent<AnimationManager>().IfAnimationPlaying())
+                if (!m_AnimatinoManager.GetComponent<AnimationManager>().IsAllAnimationEnd())
                 {
                     m_nowMode = m_preMode;
                 }
                 break;
         }
     }
+
+    // TODO:    各ゲームモードのプロセスをコルーチン内に入れる。
+    //          アニメーションが終わるのをまつコルーチンを作る
+    //IEnumerator Mode_Start()
+    //{
+
+    //}
 
     void MakeAllCardsToRootDeck()
     {
@@ -101,10 +120,26 @@ public class GameManager : MonoBehaviour
         Debug.Log("Making MyDeck and OppoDeck");
 
         int nLoop = m_RootDeck.GetComponent<Deck>().m_cards.Count / 2;
+        Vector3 rootDeckPositon = m_RootDeck.transform.Find("Canvas/ImageCard").position;
+        Vector3 myDeckPositon = m_MyDeck.transform.Find("Canvas/ImageCard").position;
+        Vector3 oppoDeckPositon = m_OppoDeck.transform.Find("Canvas/ImageCard").position;
+        Transform rootDeckCanvasTransform = m_RootDeck.transform.Find("Canvas").transform;
+        var animList = new List<AnimationManager.MethodAndWaitFrames>();
+
         for (int i = 0; i < nLoop; i++)
         {
-            m_MyDeck.GetComponent<Deck>().AddCard(m_RootDeck.GetComponent<Deck>().DrawCard());
-            m_OppoDeck.GetComponent<Deck>().AddCard(m_RootDeck.GetComponent<Deck>().DrawCard());
+            Card card1 = m_RootDeck.GetComponent<Deck>().DrawCard();
+            Card card2 = m_RootDeck.GetComponent<Deck>().DrawCard();
+            m_MyDeck.GetComponent<Deck>().AddCard(card1);
+            m_OppoDeck.GetComponent<Deck>().AddCard(card2);
+
+            IEnumerator<bool> animRetVal1 = Card.Anim_StraightLineMove(card1.GetImage(), rootDeckPositon, myDeckPositon, rootDeckCanvasTransform);
+            IEnumerator<bool> animRetVal2 = Card.Anim_StraightLineMove(card2.GetImage(), rootDeckPositon, oppoDeckPositon, rootDeckCanvasTransform);
+
+            int waitFrames =  10 + i;
+            animList.Add(new AnimationManager.MethodAndWaitFrames(animRetVal1, waitFrames));
+            animList.Add(new AnimationManager.MethodAndWaitFrames(animRetVal2, waitFrames));
         }
+        AnimationManager.Instance.AddPlayingAnimationList(animList, true);
     }
 }

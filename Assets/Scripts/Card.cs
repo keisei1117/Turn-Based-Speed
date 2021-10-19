@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Card
 {
@@ -83,5 +84,47 @@ public class Card
         }
 
         throw new System.Exception("The image file whom name is \"" + fileName + "\" can't be loaded.");
+    }
+
+    static public IEnumerator<bool> Anim_StraightLineMove(Sprite cardimage, Vector3 beforeCoordinate, Vector3 afterCoordinate, Transform parentObjectCanvas)
+    {
+        Debug.Log("Anim_StraightLineMove start");
+
+        Image animImage = Object.Instantiate(GameManager.Instance.m_ImageCardPrefab, beforeCoordinate, new Quaternion(0,0,0,0), parentObjectCanvas);
+        animImage.name = "animImage";
+        animImage.enabled = true;
+        animImage.sprite = cardimage;
+        yield return false;
+
+
+        const int requiredFrame = 20;
+        Vector3 distOfFrame = (afterCoordinate - beforeCoordinate) / requiredFrame;
+        for(int i = 0; i < requiredFrame; i++)
+        {
+            animImage.transform.Translate(distOfFrame);
+            yield return false;
+        }
+        animImage.transform.SetPositionAndRotation(afterCoordinate, new Quaternion());
+        yield return false;
+
+
+        Object.Destroy(animImage);
+        Debug.Log("Anim_StraightLineMove end");
+        yield return true;
+    }
+
+    public void TurnOver()
+    {
+        m_isFront = !m_isFront;
+    }
+
+    public void TurnIntoFront()
+    {
+        m_isFront = true;
+    }
+
+    public void TurnIntoBack()
+    {
+        m_isFront = false;
     }
 }

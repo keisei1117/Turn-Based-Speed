@@ -30,7 +30,7 @@ public class Deck : MonoBehaviour
         //card.transform.position = this.transform.position;
         card.transform.SetParent(this.transform.Find("Canvas").transform);
         m_cards.Add(card);
-        card.transform.SetAsLastSibling();//•`Ê‚ğˆê”ÔÅŒã‚Éİ’è
+        card.transform.SetAsLastSibling();//•`Ê‚ğˆê”ÔÅŒãiãj‚Éİ’è
     }
 
     public Card DrawCard()
@@ -97,8 +97,8 @@ public class Deck : MonoBehaviour
 
             // •\¦‚É‚¨‚¯‚éã‰ºŠÖŒW‚Ìİ’è
             animCard1.transform.SetAsLastSibling();
-            animCard3.transform.SetAsLastSibling();
             animCard2.transform.SetAsLastSibling();
+            animCard3.transform.SetAsLastSibling();
 
             for (int j = 0; j < loopCount; j++)
             {

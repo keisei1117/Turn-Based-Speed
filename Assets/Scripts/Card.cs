@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Card
+public class Card : MonoBehaviour
 {
     public enum Suit
     {
@@ -17,11 +17,27 @@ public class Card
     Suit m_suit;
     int m_num;
     bool m_isFront;
+    public Image m_attachedObject;
+
     static Sprite[] m_sprites;
 
-    public Card(Suit SuitVal, int numVal, bool isFront)
+    private void Start()
     {
-        m_suit = SuitVal;
+        transform.localScale = new Vector3(1, 1, 1);
+    }
+
+    private void Update()
+    {
+        if (m_attachedObject != null)
+        {
+            m_attachedObject.sprite = GetImage();
+        }
+    }
+
+    public void Initialize(Image imageObject, Suit suitVal, int numVal, bool isFront = false)
+    {
+        m_attachedObject = imageObject;
+        m_suit = suitVal;
         m_num = numVal;
         m_isFront = isFront;
         LoadImages();
@@ -86,29 +102,19 @@ public class Card
         throw new System.Exception("The image file whom name is \"" + fileName + "\" can't be loaded.");
     }
 
-    static public IEnumerator<bool> Anim_StraightLineMove(Sprite cardimage, Vector3 beforeCoordinate, Vector3 afterCoordinate, Transform parentObjectCanvas)
+    public IEnumerator<bool> Anim_StraightLineMove(Vector3 afterPosition, int frameToSpend = 20)
     {
         Debug.Log("Anim_StraightLineMove start");
 
-        Image animImage = Object.Instantiate(GameManager.Instance.m_ImageCardPrefab, beforeCoordinate, new Quaternion(0,0,0,0), parentObjectCanvas);
-        animImage.name = "animImage";
-        animImage.enabled = true;
-        animImage.sprite = cardimage;
-        yield return false;
-
-
-        const int requiredFrame = 20;
-        Vector3 distOfFrame = (afterCoordinate - beforeCoordinate) / requiredFrame;
-        for(int i = 0; i < requiredFrame; i++)
+        Vector3 distOfFrame = (afterPosition - this.transform.position) / frameToSpend;
+        for(int i = 0; i < frameToSpend; i++)
         {
-            animImage.transform.Translate(distOfFrame);
+            this.transform.Translate(distOfFrame);
             yield return false;
         }
-        animImage.transform.SetPositionAndRotation(afterCoordinate, new Quaternion());
+        this.transform.SetPositionAndRotation(afterPosition, new Quaternion());
         yield return false;
 
-
-        Object.Destroy(animImage);
         Debug.Log("Anim_StraightLineMove end");
         yield return true;
     }

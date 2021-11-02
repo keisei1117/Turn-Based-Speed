@@ -75,10 +75,11 @@ public GameObject m_RootDeck;
         switch (m_nowMode)
         {
             case GameMode.START:
-                Debug.Log("Gamemode: START");
-                MakeAllCardsToRootDeck();
-                m_RootDeck.GetComponent<Deck>().Shuffle();
-                MakeMyOppoDeck();
+                //Debug.Log("Gamemode: START");
+                //MakeAllCardsToRootDeck();
+                //m_RootDeck.GetComponent<Deck>().Shuffle();
+                //MakeMyOppoDeck();
+                StartCoroutine(Mode_Start());
 
                 m_nowMode = GameMode.WAITING_ANIMATION;
                 break;
@@ -94,11 +95,16 @@ public GameObject m_RootDeck;
     }
 
     // TODO:    各ゲームモードのプロセスをコルーチン内に入れる。
-    //          アニメーションが終わるのをまつコルーチンを作る
-    //IEnumerator Mode_Start()
-    //{
+    IEnumerator Mode_Start()
+    {
+        Debug.Log("Gamemode: START");
+        MakeAllCardsToRootDeck();
+        m_RootDeck.GetComponent<Deck>().Shuffle();
+        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
 
-    //}
+        MakeMyOppoDeck();
+        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
+    }
 
     void MakeAllCardsToRootDeck()
     {
@@ -108,22 +114,33 @@ public GameObject m_RootDeck;
         {
             for (int i = 1; i <= 13; i++)
             {
-                m_RootDeck.GetComponent<Deck>().AddCard(new Card(s, i, false));
+                Image newCardImageObj = Instantiate(m_ImageCardPrefab);
+                Card newCard = newCardImageObj.GetComponent<Card>();
+                newCard.Initialize(newCardImageObj, s, i);
+                newCard.name = s.ToString() + "_" + i.ToString();
+                m_RootDeck.GetComponent<Deck>().AddCard(newCard);
             }
         }
-        m_RootDeck.GetComponent<Deck>().AddCard(new Card(Card.Suit.Joker, 1, false));
-        m_RootDeck.GetComponent<Deck>().AddCard(new Card(Card.Suit.Joker, 2, false));
+        Image joker1_imageObj = Instantiate(m_ImageCardPrefab);
+        Image joker2_imageObj = Instantiate(m_ImageCardPrefab);
+        Card joker1 = joker1_imageObj.GetComponent<Card>();
+        Card joker2 = joker2_imageObj.GetComponent<Card>();
+        joker1.Initialize(joker1_imageObj, Card.Suit.Joker, 1);
+        joker2.Initialize(joker2_imageObj, Card.Suit.Joker, 2);
+        joker1.name = "joker_1";
+        joker2.name = "joker_2";
+        m_RootDeck.GetComponent<Deck>().AddCard(joker1);
+        m_RootDeck.GetComponent<Deck>().AddCard(joker2);
     }
 
+    //配る
     public void MakeMyOppoDeck()
     {
         Debug.Log("Making MyDeck and OppoDeck");
 
         int nLoop = m_RootDeck.GetComponent<Deck>().m_cards.Count / 2;
-        Vector3 rootDeckPositon = m_RootDeck.transform.Find("Canvas/ImageCard").position;
-        Vector3 myDeckPositon = m_MyDeck.transform.Find("Canvas/ImageCard").position;
-        Vector3 oppoDeckPositon = m_OppoDeck.transform.Find("Canvas/ImageCard").position;
-        Transform rootDeckCanvasTransform = m_RootDeck.transform.Find("Canvas").transform;
+        Vector3 myDeckPositon = m_MyDeck.transform.position;
+        Vector3 oppoDeckPositon = m_OppoDeck.transform.position;
         var animList = new List<AnimationManager.MethodAndWaitFrames>();
 
         for (int i = 0; i < nLoop; i++)
@@ -133,9 +150,9 @@ public GameObject m_RootDeck;
             m_MyDeck.GetComponent<Deck>().AddCard(card1);
             m_OppoDeck.GetComponent<Deck>().AddCard(card2);
 
-            IEnumerator<bool> animRetVal1 = Card.Anim_StraightLineMove(card1.GetImage(), rootDeckPositon, myDeckPositon, rootDeckCanvasTransform);
-            IEnumerator<bool> animRetVal2 = Card.Anim_StraightLineMove(card2.GetImage(), rootDeckPositon, oppoDeckPositon, rootDeckCanvasTransform);
-
+            // アニメーション処理
+            IEnumerator<bool> animRetVal1 = card1.Anim_StraightLineMove(myDeckPositon);
+            IEnumerator<bool> animRetVal2 = card2.Anim_StraightLineMove(oppoDeckPositon);
             int waitFrames =  10 + i;
             animList.Add(new AnimationManager.MethodAndWaitFrames(animRetVal1, waitFrames));
             animList.Add(new AnimationManager.MethodAndWaitFrames(animRetVal2, waitFrames));

@@ -123,11 +123,20 @@ public class AnimationManager : MonoBehaviour
     {
         if (m_animMethods.Count == 0)
         {
-            return false;
+            return true;
         }
         else
         {
-            return true;
+            return false;
         }
+    }
+
+    public IEnumerator Coroutine_WaitAllAnimEnd()
+    {
+        while (!IsAllAnimationEnd())
+        {
+            yield return null;
+        }
+        Debug.Log("All Animations end.");
     }
 }

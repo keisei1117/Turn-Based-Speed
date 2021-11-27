@@ -29,14 +29,14 @@ public class AnimationManager : MonoBehaviour
         // ë“ÇøÉtÉåÅ[ÉÄêî
         public int waitFrames;
 
-        public MethodAndWaitFrames(IEnumerator<bool> method, int waitFrames)
+        public MethodAndWaitFrames(IEnumerator<bool> method, int waitFrames = 0)
         {
             this.method = method;
             this.waitFrames = waitFrames;
         }
     }
 
-    static List<List<MethodAndWaitFrames>> m_animMethods;
+    List<List<MethodAndWaitFrames>> m_animMethods;
 
     private void Awake()
     {
@@ -89,38 +89,27 @@ public class AnimationManager : MonoBehaviour
         }
     }
 
-    public void AddPlayingAnimation(IEnumerator<bool> retValOfAnimMethod, bool waitFormerAnimation, int waitFrames = 0)
+    public void AddAnimToFirstIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
     {
         Debug.Log("AddPlayingAnimation");
         MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
-        if (waitFormerAnimation)
-        {
-            m_animMethods.Add(new List<MethodAndWaitFrames>());
-            m_animMethods[m_animMethods.Count - 1].Add(additionalMethod);
-        }
-        else
-        {
-            m_animMethods[0].Add(additionalMethod);
-        }
+        m_animMethods[0].Add(additionalMethod);
     }
-
-    public void AddPlayingAnimationList(List<MethodAndWaitFrames> animList, bool waitFormerAnimation)
+    public void AddAnimToLastIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
     {
-        Debug.Log("AddPlayingAnimationList");
-        if (waitFormerAnimation)
-        {
-            m_animMethods.Add(new List<MethodAndWaitFrames>());
-            m_animMethods[m_animMethods.Count - 1].AddRange(animList);
-
-        }
-        else
-        {
-            m_animMethods[0].AddRange(animList);
-        }
+        Debug.Log("AddAnimToLastIndex");
+        MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
+        m_animMethods[m_animMethods.Count - 1].Add(additionalMethod);
+    }
+    public void CreateNewEmptyAnimListToEnd()
+    {
+        Debug.Log("CreateNewEmptyAnimListToEnd");
+        m_animMethods.Add(new List<MethodAndWaitFrames>());
     }
 
     public bool IsAllAnimationEnd()
     {
+        Debug.Log("m_animMethods.Count: " + m_animMethods.Count);
         if (m_animMethods.Count == 0)
         {
             return true;

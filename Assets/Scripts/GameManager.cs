@@ -24,30 +24,25 @@ public class GameManager : MonoBehaviour
     }
 
 
-public GameObject m_RootDeck;
+    public GameObject m_RootDeck;
     public GameObject m_MyDeck;
     public GameObject m_OppoDeck;
     public GameObject m_RightTrush;
     public GameObject m_LeftTrush;
     public GameObject m_MyHand;
     public GameObject m_OppoHand;
-
     public GameObject m_AnimatinoManager;
-
+    public GameObject m_UIManager;
     public Image m_ImageCardPrefab;
 
-    enum GameMode
-    {
-        STANDBY,
-        START,
-        PLAYING,
-        POUSE,
-        WAITING_ANIMATION,
-    }
-    GameMode m_nowMode, m_preMode;
+    public GameStatus m_gameStatus { get; protected set; }
+
+    const GameStatus.Mode INITIAL_MODE = GameStatus.Mode.PREPARE_CARD;
+    bool m_isFirstUpdate;
 
     private void Awake()
     {
+        // TODO: 確認不十分　いちいち書くのめんどい
         if (m_RootDeck == null ||
             m_MyDeck == null ||
             m_OppoDeck == null ||
@@ -59,51 +54,67 @@ public GameObject m_RootDeck;
             throw new NullReferenceException("Game Object instance is null.");
         }
 
-        m_nowMode = GameMode.START;
-        m_preMode = GameMode.STANDBY;
+        m_gameStatus = new GameStatus();
+        m_gameStatus.AddModeQueue(INITIAL_MODE);
     }
 
-    // Start is called before the first frame update
+    // Start is called before the first frame updat e
     void Start()
     {
         Card.LoadImages();
+        m_isFirstUpdate = true;
     }
 
     // Update is called once per frame
     void Update()
     {
-        switch (m_nowMode)
+        if (m_gameStatus.m_isModeEnd)
         {
-            case GameMode.START:
-                //Debug.Log("Gamemode: START");
-                //MakeAllCardsToRootDeck();
-                //m_RootDeck.GetComponent<Deck>().Shuffle();
-                //MakeMyOppoDeck();
-                StartCoroutine(Mode_Start());
+            if (m_isFirstUpdate)
+            {
+                m_isFirstUpdate=false;
+            }
+            //次のモードへ
+            m_gameStatus.ProceedModeQueue();
+        }
+        else
+        {
+            return; //コルーチン処理待ち
+        }
 
-                m_nowMode = GameMode.WAITING_ANIMATION;
+        Debug.Log("nowMode: " + m_gameStatus.GetNowMode());
+        m_gameStatus.StartMode();
+        switch (m_gameStatus.GetNowMode())
+        {
+            case GameStatus.Mode.PREPARE_CARD:
+                StartCoroutine(Mode_PrepareCards());
+                m_gameStatus.AddModeQueue(GameStatus.Mode.PLAYING);
                 break;
-
-            case GameMode.WAITING_ANIMATION:
-                Debug.Log("Gamemode: WAITING_ANIMATION");
-                if (!m_AnimatinoManager.GetComponent<AnimationManager>().IsAllAnimationEnd())
-                {
-                    m_nowMode = m_preMode;
-                }
+            case GameStatus.Mode.PLAYING:
                 break;
         }
     }
 
-    // TODO:    各ゲームモードのプロセスをコルーチン内に入れる。
-    IEnumerator Mode_Start()
+    IEnumerator Mode_PrepareCards()
     {
-        Debug.Log("Gamemode: START");
+        Debug.Log("Gamemode: PREPARE_CARD");
         MakeAllCardsToRootDeck();
         m_RootDeck.GetComponent<Deck>().Shuffle();
         yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
 
         MakeMyOppoDeck();
         yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
+
+        // TODO: どっちから始めるか
+        m_gameStatus.SetTurnRandom();
+
+        // TODO: カードを引く
+        MakeInitialHands();
+        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
+
+        //↓必須処理
+        m_gameStatus.FinishMode();
+        yield break;
     }
 
     void MakeAllCardsToRootDeck()
@@ -134,7 +145,7 @@ public GameObject m_RootDeck;
     }
 
     //配る
-    public void MakeMyOppoDeck()
+    void MakeMyOppoDeck()
     {
         Debug.Log("Making MyDeck and OppoDeck");
 
@@ -143,6 +154,7 @@ public GameObject m_RootDeck;
         Vector3 oppoDeckPositon = m_OppoDeck.transform.position;
         var animList = new List<AnimationManager.MethodAndWaitFrames>();
 
+        AnimationManager.Instance.CreateNewEmptyAnimListToEnd();
         for (int i = 0; i < nLoop; i++)
         {
             Card card1 = m_RootDeck.GetComponent<Deck>().DrawCard();
@@ -150,13 +162,22 @@ public GameObject m_RootDeck;
             m_MyDeck.GetComponent<Deck>().AddCard(card1);
             m_OppoDeck.GetComponent<Deck>().AddCard(card2);
 
-            // アニメーション処理
+            // アニメーション処理をAnimationManagerに渡す
             IEnumerator<bool> animRetVal1 = card1.Anim_StraightLineMove(myDeckPositon);
             IEnumerator<bool> animRetVal2 = card2.Anim_StraightLineMove(oppoDeckPositon);
-            int waitFrames =  10 + i;
-            animList.Add(new AnimationManager.MethodAndWaitFrames(animRetVal1, waitFrames));
-            animList.Add(new AnimationManager.MethodAndWaitFrames(animRetVal2, waitFrames));
+            int waitFrames = 10 + i;
+
+            AnimationManager.Instance.AddAnimToLastIndex(animRetVal1, waitFrames);
+            AnimationManager.Instance.AddAnimToLastIndex(animRetVal2, waitFrames);
         }
-        AnimationManager.Instance.AddPlayingAnimationList(animList, true);
+    }
+
+    void MakeInitialHands()
+    {
+        for(int i = 0; i < Hand.INITIAL_CARDS_NUM; i++)
+        {
+            m_MyHand.GetComponent<Hand>().AddCard(m_MyDeck.GetComponent<Deck>().DrawCard(), true);
+            m_OppoHand.GetComponent<Hand>().AddCard(m_OppoDeck.GetComponent<Deck>().DrawCard(), false);
+        }
     }
 }

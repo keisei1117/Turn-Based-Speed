@@ -28,10 +28,6 @@ public class Card : MonoBehaviour
 
     private void Update()
     {
-        if (m_attachedObject != null)
-        {
-            m_attachedObject.sprite = GetImage();
-        }
     }
 
     public void Initialize(Image imageObject, Suit suitVal, int numVal, bool isFront = false)
@@ -41,6 +37,7 @@ public class Card : MonoBehaviour
         m_num = numVal;
         m_isFront = isFront;
         LoadImages();
+        m_attachedObject.sprite = GetImage();
     }
 
     static public void LoadImages()
@@ -107,30 +104,61 @@ public class Card : MonoBehaviour
         Debug.Log("Anim_StraightLineMove start");
 
         Vector3 distOfFrame = (afterPosition - this.transform.position) / frameToSpend;
-        for(int i = 0; i < frameToSpend; i++)
+        for (int i = 0; i < frameToSpend; i++)
         {
-            this.transform.Translate(distOfFrame);
+            this.transform.position += distOfFrame;
             yield return false;
         }
         this.transform.SetPositionAndRotation(afterPosition, new Quaternion());
-        yield return false;
-
+        
         Debug.Log("Anim_StraightLineMove end");
+        yield return true;
+    }
+
+    public IEnumerator<bool> Anim_TurnOver(int frameToSpend = 20)
+    {
+        Debug.Log("Anim_TurnOver start");
+        int BeforeTurnOverframe = frameToSpend / 2;
+        int AfterTurnOverframe = frameToSpend - BeforeTurnOverframe;
+
+        float rotateAnglePerFrame = 90 / (float)BeforeTurnOverframe;
+        for (int i = 0; i < BeforeTurnOverframe; i++)
+        {
+            this.transform.Rotate(new Vector3(0, rotateAnglePerFrame, 0));
+            yield return false;
+        }
+
+        TurnOver();
+
+        rotateAnglePerFrame = 90 / (float)AfterTurnOverframe;
+        for (int i = 0; i < AfterTurnOverframe; i++)
+        {
+            this.transform.Rotate(new Vector3(0, -rotateAnglePerFrame, 0));
+            yield return false;
+        }
+        Quaternion accurateRotarion = this.transform.rotation;
+        accurateRotarion.y = 0;
+        this.transform.rotation = accurateRotarion;
+
+        Debug.Log("Anim_TurnOver end");
         yield return true;
     }
 
     public void TurnOver()
     {
         m_isFront = !m_isFront;
+        m_attachedObject.sprite = GetImage();
     }
 
     public void TurnIntoFront()
     {
         m_isFront = true;
+        m_attachedObject.sprite = GetImage();
     }
 
     public void TurnIntoBack()
     {
         m_isFront = false;
+        m_attachedObject.sprite = GetImage();
     }
 }

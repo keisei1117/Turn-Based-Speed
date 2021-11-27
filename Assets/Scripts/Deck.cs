@@ -27,7 +27,6 @@ public class Deck : MonoBehaviour
 
     public void AddCard(Card card)
     {
-        //card.transform.position = this.transform.position;
         card.transform.SetParent(this.transform.Find("Canvas").transform);
         m_cards.Add(card);
         card.transform.SetAsLastSibling();//ï`é ÇàÍî‘ç≈å„Ç…ê›íË
@@ -69,7 +68,8 @@ public class Deck : MonoBehaviour
 
         m_cards = ShuffledCards;
 
-        AnimationManager.Instance.AddPlayingAnimation(Anim_Shuffle(), true);
+        AnimationManager.Instance.CreateNewEmptyAnimListToEnd();
+        AnimationManager.Instance.AddAnimToLastIndex(Anim_Shuffle());
     }
 
     IEnumerator<bool> Anim_Shuffle()

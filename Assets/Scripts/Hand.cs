@@ -10,6 +10,8 @@ public class Hand : MonoBehaviour
     public const int INITIAL_CARDS_NUM = 4;
     public const float SPACE_BETWEEN_CARDS = 2.5f;
 
+    const int frameToSpend = 20;
+
     private void Awake()
     {
         m_cards = new List<Card>();
@@ -30,7 +32,7 @@ public class Hand : MonoBehaviour
         return m_cards.Count < MAX_CARDS_NUM;
     }
 
-    public void AddCard(Card card, bool waitFormerAnimations)
+    public void AddCard(Card card)
     {
         if (!CanAddCard())
         {
@@ -39,15 +41,10 @@ public class Hand : MonoBehaviour
         card.transform.SetParent(this.transform.Find("Canvas").transform);
         m_cards.Add(card);
         card.transform.SetAsLastSibling();
+    }
 
-
-
-        //アニメーション処理
-        if (waitFormerAnimations)
-        {
-            AnimationManager.Instance.CreateNewEmptyAnimListToEnd();
-        }
-        const int frameToSpend = 20;
+    public void DoMoveCardPosAnim()
+    {
         //カードの移動
         for (int i = 0; i < m_cards.Count; i++)
         {
@@ -55,6 +52,12 @@ public class Hand : MonoBehaviour
             IEnumerator<bool> animRetVal = m_cards[i].Anim_StraightLineMove(afterPosition, frameToSpend);
             AnimationManager.Instance.AddAnimToLastIndex(animRetVal);
         }
+    }
+
+    public void DoAddCardAnim()
+    {
+        //移動
+        DoMoveCardPosAnim();
         //カードの裏返し
         AnimationManager.Instance.AddAnimToLastIndex(m_cards[m_cards.Count - 1].Anim_TurnOver(frameToSpend));
     }

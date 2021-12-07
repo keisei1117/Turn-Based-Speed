@@ -2,8 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class Card : MonoBehaviour
+public class Card : MonoBehaviour,
+                    IDragHandler, IBeginDragHandler, IEndDragHandler
 {
     public enum Suit
     {
@@ -14,21 +16,57 @@ public class Card : MonoBehaviour
         Joker,
     }
 
-    Suit m_suit;
-    int m_num;
-    bool m_isFront;
+    public Suit m_suit { get; private set; }
+    public int m_num { get; private set; }
+    public bool m_isFront { get; private set; }
     public Image m_attachedObject;
 
     static Sprite[] m_sprites;
 
+    Vector3 m_beforeDragPos;
+    Transform m_beforeDragParent;
+
+    //flags
+    public bool m_isDragging { get; private set; } = false;
+    public bool m_canDrag;
+
     private void Start()
     {
         transform.localScale = new Vector3(1, 1, 1);
+        m_canDrag = false;
     }
 
     private void Update()
     {
     }
+
+    //TODO:ドラッグの処理
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!m_canDrag) return;
+        Debug.Log("OnDrag");
+        Vector3 targetPos = Camera.main.ScreenToWorldPoint(eventData.position);
+        targetPos.z = 0;
+        this.transform.position = targetPos;
+        m_isDragging = true;
+    }
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        m_beforeDragPos = this.transform.position;
+        m_beforeDragParent = this.transform.parent;
+        this.transform.SetParent(GameManager.Instance.m_TopLayerCanvas.transform);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        Debug.Log("OnEndDrag");
+        this.transform.SetParent(m_beforeDragParent);
+        //this.transform.SetAsLastSibling(); 使わなくても勝手に一番下に設定される
+        AnimationManager.Instance.AddAnimToFirstIndex(
+            Anim_StraightLineMove(m_beforeDragPos, 7));
+        m_isDragging = false;
+    }
+
 
     public void Initialize(Image imageObject, Suit suitVal, int numVal, bool isFront = false)
     {
@@ -99,22 +137,6 @@ public class Card : MonoBehaviour
         throw new System.Exception("The image file whom name is \"" + fileName + "\" can't be loaded.");
     }
 
-    public IEnumerator<bool> Anim_StraightLineMove(Vector3 afterPosition, int frameToSpend = 20)
-    {
-        Debug.Log("Anim_StraightLineMove start");
-
-        Vector3 distOfFrame = (afterPosition - this.transform.position) / frameToSpend;
-        for (int i = 0; i < frameToSpend; i++)
-        {
-            this.transform.position += distOfFrame;
-            yield return false;
-        }
-        this.transform.SetPositionAndRotation(afterPosition, new Quaternion());
-        
-        Debug.Log("Anim_StraightLineMove end");
-        yield return true;
-    }
-
     public IEnumerator<bool> Anim_TurnOver(int frameToSpend = 20)
     {
         Debug.Log("Anim_TurnOver start");
@@ -144,6 +166,36 @@ public class Card : MonoBehaviour
         yield return true;
     }
 
+    public IEnumerator<bool> Anim_StraightLineMove(Vector3 afterPosition, int frameToSpend = 20)
+    {
+        Debug.Log("Anim_StraightLineMove start");
+
+        Vector3 distOfFrame = (afterPosition - this.transform.position) / frameToSpend;
+        for (int i = 0; i < frameToSpend; i++)
+        {
+            this.transform.position += distOfFrame;
+            yield return false;
+        }
+        this.transform.SetPositionAndRotation(afterPosition, new Quaternion());
+
+        Debug.Log("Anim_StraightLineMove end");
+        yield return true;
+    }
+
+    public IEnumerator<bool> Anim_StraightLineMoveWithTurnOver(Vector3 afterPosition, int framToSpend = 20)
+    {
+        IEnumerator<bool> lineMove = Anim_StraightLineMove(afterPosition, framToSpend);
+        IEnumerator<bool> turnOver = Anim_TurnOver(framToSpend);
+
+        while(!lineMove.Current || !turnOver.Current)
+        {
+            lineMove.MoveNext();
+            turnOver.MoveNext();
+            yield return false;
+        }
+        yield return true;
+    }
+
     public void TurnOver()
     {
         m_isFront = !m_isFront;
@@ -161,4 +213,5 @@ public class Card : MonoBehaviour
         m_isFront = false;
         m_attachedObject.sprite = GetImage();
     }
+
 }

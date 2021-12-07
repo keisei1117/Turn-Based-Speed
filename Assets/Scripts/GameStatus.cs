@@ -17,7 +17,7 @@ public class GameStatus
     {
         TURN_START,
         DRAW,
-        OPELATE,
+        OPERATE,
         SERVE,
         TURN_END,
     }
@@ -29,7 +29,9 @@ public class GameStatus
 
 
     public Queue<Mode> m_modeQueue;
-    public PlayingPhase m_gamePhase { get; set; }
+
+
+    public PlayingPhase m_gamePhase { get; private set; }
     public bool m_isModeEnd { get; protected set; }
     public Turn m_turn { get; protected set; }
 
@@ -116,5 +118,16 @@ public class GameStatus
         {
             m_turn = Turn.MY_TURN;
         }
+    }
+
+    public void ProceedGamePhase()
+    {
+        if (m_gamePhase == PlayingPhase.TURN_END)
+        {
+            m_gamePhase = PlayingPhase.TURN_START;
+            SwitchTurn();
+            return;
+        }
+        m_gamePhase++;
     }
 }

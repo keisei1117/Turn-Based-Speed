@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AnimationManager : MonoBehaviour
+public class AnimationManager
 {
     // ƒVƒ“ƒOƒ‹ƒgƒ“ŽÀ‘•
     private static AnimationManager instance;
@@ -12,7 +12,7 @@ public class AnimationManager : MonoBehaviour
         {
             if(instance == null)
             {
-                instance = (AnimationManager)FindObjectOfType(typeof(AnimationManager));
+                instance = new AnimationManager();
                 if (null == instance)
                 {
                     Debug.Log(" AnimationManager Instance Error ");
@@ -38,27 +38,12 @@ public class AnimationManager : MonoBehaviour
 
     List<List<MethodAndWaitFrames>> m_animMethods;
 
-    private void Awake()
+    public AnimationManager()
     {
         m_animMethods = new List<List<MethodAndWaitFrames>>();
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-    }
-
-    private void FixedUpdate()
-    {
-        DoAnimation();
-    }
-
-    void DoAnimation()
+    public void DoAnimation()
     {
         if (m_animMethods.Count == 0) return;
 
@@ -93,6 +78,8 @@ public class AnimationManager : MonoBehaviour
     {
         Debug.Log("AddPlayingAnimation");
         MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
+        if (m_animMethods.Count == 0)
+            m_animMethods.Add(new List<MethodAndWaitFrames>());
         m_animMethods[0].Add(additionalMethod);
     }
     public void AddAnimToLastIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)

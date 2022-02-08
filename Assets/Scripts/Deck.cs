@@ -69,8 +69,8 @@ public class Deck : MonoBehaviour
 
         m_cards = ShuffledCards;
 
-        AnimationManager.Instance.CreateNewEmptyAnimListToEnd();
-        AnimationManager.Instance.AddAnimToLastIndex(Anim_Shuffle());
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+        AnimationQueue.Instance.AddAnimToLastIndex(Anim_Shuffle());
     }
 
     IEnumerator<bool> Anim_Shuffle()

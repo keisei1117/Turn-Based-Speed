@@ -62,7 +62,7 @@ public class Card : MonoBehaviour,
         Debug.Log("OnEndDrag");
         this.transform.SetParent(m_beforeDragParent);
         //this.transform.SetAsLastSibling(); g‚í‚È‚­‚Ä‚àŸè‚Éˆê”Ô‰º‚Éİ’è‚³‚ê‚é
-        AnimationManager.Instance.AddAnimToFirstIndex(
+        AnimationQueue.Instance.AddAnimToFirstIndex(
             Anim_StraightLineMove(m_beforeDragPos, 7));
         m_isDragging = false;
     }

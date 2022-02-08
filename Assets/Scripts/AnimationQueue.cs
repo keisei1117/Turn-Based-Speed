@@ -2,25 +2,30 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AnimationManager
+public class AnimationQueue
 {
     // シングルトン実装
-    private static AnimationManager instance;
-    public static AnimationManager Instance
+    private static AnimationQueue instance;
+    public static AnimationQueue Instance
     {
         get
         {
             if(instance == null)
             {
-                instance = new AnimationManager();
+                instance = new AnimationQueue();
                 if (null == instance)
                 {
-                    Debug.Log(" AnimationManager Instance Error ");
+                    Debug.Log(" AnimationQueue Instance Error ");
                 }
             }
             return instance;
         }
     }
+    private AnimationQueue()
+    {
+        m_animMethods = new List<List<MethodAndWaitFrames>>();
+    }
+
 
     // アニメーションを行うメソッドの戻り値(IEnumerator<bool>)と待ちフレーム数をセットで保持する
     public class MethodAndWaitFrames
@@ -38,10 +43,6 @@ public class AnimationManager
 
     List<List<MethodAndWaitFrames>> m_animMethods;
 
-    public AnimationManager()
-    {
-        m_animMethods = new List<List<MethodAndWaitFrames>>();
-    }
 
     public void DoAnimation()
     {

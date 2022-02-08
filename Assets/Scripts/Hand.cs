@@ -53,7 +53,7 @@ public class Hand : MonoBehaviour
         {
             Vector3 afterPosition = CalcCardPosition()[i];
             IEnumerator<bool> animRetVal = m_cards[i].Anim_StraightLineMove(afterPosition, frameToSpend);
-            AnimationManager.Instance.AddAnimToLastIndex(animRetVal);
+            AnimationQueue.Instance.AddAnimToLastIndex(animRetVal);
         }
     }
 
@@ -62,7 +62,7 @@ public class Hand : MonoBehaviour
         //à⁄ìÆ
         DoMoveCardPosAnim();
         //ÉJÅ[ÉhÇÃó†ï‘Çµ
-        AnimationManager.Instance.AddAnimToLastIndex(m_cards[m_cards.Count - 1].Anim_TurnOver(frameToSpend));
+        AnimationQueue.Instance.AddAnimToLastIndex(m_cards[m_cards.Count - 1].Anim_TurnOver(frameToSpend));
     }
 
     public List<Vector3> CalcCardPosition()

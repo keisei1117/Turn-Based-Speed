@@ -17,12 +17,12 @@ public class Trush : Deck
     {
         if (ifTurnover)
         {
-            AnimationManager.Instance.AddAnimToLastIndex(
+            AnimationQueue.Instance.AddAnimToLastIndex(
                 m_cards[m_cards.Count - 1].Anim_StraightLineMoveWithTurnOver(this.transform.position));
         }
         else
         {
-            AnimationManager.Instance.AddAnimToLastIndex(
+            AnimationQueue.Instance.AddAnimToLastIndex(
                 m_cards[m_cards.Count - 1].Anim_StraightLineMove(this.transform.position));
         }
     }

@@ -23,7 +23,7 @@ public class UIManager : MonoBehaviour
 
     private void FixedUpdate()
     {
-        m_myOrOppoTurn.enabled = GameManager.Instance.m_gameStatus.GetNowMode() == GameStatus.Mode.PLAYING;
+        m_myOrOppoTurn.enabled = GameManager.Instance.m_gameStatus.m_nowMode == GameStatus.Mode.PLAYING;
 
         if (GameManager.Instance.m_gameStatus.IsMyTurn())
         {

@@ -232,7 +232,7 @@ Transform:
   m_Children:
   - {fileID: 412709244}
   m_Father: {fileID: 0}
-  m_RootOrder: 13
+  m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &317224326 stripped
 GameObject:
@@ -682,7 +682,7 @@ Transform:
   m_Children:
   - {fileID: 1782129839}
   m_Father: {fileID: 0}
-  m_RootOrder: 14
+  m_RootOrder: 13
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &660589989
 MonoBehaviour:
@@ -700,49 +700,6 @@ MonoBehaviour:
   m_phase: {fileID: 625176406}
   m_turn: {fileID: 1062492681}
   mouseTestTxt: {fileID: 1777177832}
---- !u!1 &737907072
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 737907074}
-  - component: {fileID: 737907073}
-  m_Layer: 0
-  m_Name: AnimationManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &737907073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 737907072}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 137dd58e2fcc1624e925c3afb779cba1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &737907074
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 737907072}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.22270349, y: 0.25350368, z: 78.72286}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 12
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &837874169
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -805,6 +762,10 @@ PrefabInstance:
     - target: {fileID: 6821145803424098863, guid: b25b887de42c487469ede7ce28707cdc, type: 3}
       propertyPath: m_SizeDelta.y
       value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8060614637632447244, guid: b25b887de42c487469ede7ce28707cdc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8441387942766248158, guid: b25b887de42c487469ede7ce28707cdc, type: 3}
       propertyPath: m_Name

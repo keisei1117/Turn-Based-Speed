@@ -28,50 +28,12 @@ public class GameStatus
     }
 
 
-    public Queue<Mode> m_modeQueue;
-
-
+    public Mode m_nowMode { get; set; }
     public PlayingPhase m_gamePhase { get; private set; }
     public bool m_isModeEnd { get; protected set; }
     public Turn m_turn { get; protected set; }
 
     public GameStatus()
-    {
-        m_modeQueue = new Queue<Mode>();
-        m_isModeEnd = true;
-    }
-
-    public Mode GetNowMode()
-    {
-        if (m_modeQueue.Count == 0)
-            return Mode.EMPTY;
-        return m_modeQueue.Peek();
-    }
-
-    public void AddModeQueue(Mode mode)
-    {
-        if(mode == Mode.EMPTY)
-        {
-            Debug.LogError("You shouldn't set \"Mode.EMPTY\".");
-        }
-        m_modeQueue.Enqueue(mode);
-    }
-
-    public void ProceedModeQueue()
-    {
-        if (m_modeQueue.Count <= 1)
-        {
-            Debug.LogWarning("m_modeQueue doesn't have next MODE value.");
-            return;
-        }
-        m_modeQueue.Dequeue();
-    }
-
-    public void StartMode()
-    {
-        m_isModeEnd = false;
-    }
-    public void FinishMode()
     {
         m_isModeEnd = true;
     }

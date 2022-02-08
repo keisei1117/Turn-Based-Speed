@@ -5,7 +5,10 @@ using UnityEngine;
 
 public class Hand : MonoBehaviour
 {
+    public GameObject m_rangeObj;
+
     List<Card> m_cards;
+
     public const int MAX_CARDS_NUM = 6;
     public const int INITIAL_CARDS_NUM = 4;
     public const float SPACE_BETWEEN_CARDS = 2.5f;

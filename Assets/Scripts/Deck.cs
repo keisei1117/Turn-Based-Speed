@@ -6,12 +6,13 @@ using UnityEngine.UI;
 
 public class Deck : MonoBehaviour
 {
+    public GameObject m_rangeObj;
+
     //m_cards[0]‚ªˆê”Ô‰º
     public List<Card> m_cards { get; private set; }
 
     private void Awake()
     {
-        //m_cards = new List<Card>();
         m_cards = new List<Card>();
     }
 

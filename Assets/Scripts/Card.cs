@@ -67,6 +67,18 @@ public class Card : MonoBehaviour,
         m_isDragging = false;
     }
 
+    bool m_test; //ÇƒÇ∑Ç∆Å@è¡Çπ
+    // ref readonly Å© C++ÇÃ const bool& Ç›ÇΩÇ¢Ç»Ç‡ÇÒ
+    public ref readonly bool AllowDragOnAndGetFlag(GameObject objToRegster)
+    {
+        
+        return ref m_test;
+    }
+
+    //public bool IsDraggedOn(GameObject obj)
+    //{
+
+    //}
 
     public void Initialize(Image imageObject, Suit suitVal, int numVal, bool isFront = false)
     {
@@ -213,5 +225,4 @@ public class Card : MonoBehaviour,
         m_isFront = false;
         m_attachedObject.sprite = GetImage();
     }
-
 }

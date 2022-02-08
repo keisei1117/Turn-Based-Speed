@@ -7,6 +7,7 @@ using System;
 
 public class GameManager : MonoBehaviour
 {
+    //シングルトン実装
     private static GameManager instance;
     public static GameManager Instance {
         get
@@ -22,7 +23,6 @@ public class GameManager : MonoBehaviour
             return instance;
         }
     }
-
 
     public GameObject m_RootDeckObj;
     public GameObject m_MyDeckObj;
@@ -45,9 +45,11 @@ public class GameManager : MonoBehaviour
     public Canvas m_TopLayerCanvas;
 
     public GameStatus m_gameStatus { get; protected set; }
-
     const GameStatus.Mode INITIAL_MODE = GameStatus.Mode.PREPARE_CARD;
     bool m_isFirstUpdate;
+
+    UpdateFuncQueue m_updateFuncQueue;
+
 
     private void Awake()
     {
@@ -73,7 +75,7 @@ public class GameManager : MonoBehaviour
         m_UIManager = m_UIManagerObj.GetComponent<UIManager>();
 
         m_gameStatus = new GameStatus();
-        m_gameStatus.AddModeQueue(INITIAL_MODE);
+        m_updateFuncQueue = new UpdateFuncQueue();
     }
 
     // Start is called before the first frame updat e
@@ -81,39 +83,13 @@ public class GameManager : MonoBehaviour
     {
         Card.LoadImages();
         m_isFirstUpdate = true;
+        m_updateFuncQueue.EnqueueOnceRunProcess(Mode_PrepareCards);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (m_gameStatus.m_isModeEnd)
-        {
-            if (m_isFirstUpdate)
-            {
-                m_isFirstUpdate = false;
-            }
-            else
-            {
-                //次のモードへ
-                m_gameStatus.ProceedModeQueue();
-            }
-        }
-        else
-        {
-            return; //コルーチン処理待ち
-        }
-
-        Debug.Log("nowMode: " + m_gameStatus.GetNowMode());
-        m_gameStatus.StartMode();
-        switch (m_gameStatus.GetNowMode())
-        {
-            case GameStatus.Mode.PREPARE_CARD:
-                StartCoroutine(Mode_PrepareCards());
-                m_gameStatus.AddModeQueue(GameStatus.Mode.PLAYING);
-                break;
-            case GameStatus.Mode.PLAYING:
-                break;
-        }
+        m_updateFuncQueue.RunFunc();
     }
 
     private void FixedUpdate()
@@ -121,49 +97,31 @@ public class GameManager : MonoBehaviour
         AnimationManager.Instance.DoAnimation();
     }
 
-    IEnumerator Mode_PrepareCards()
+    void Mode_PrepareCards()
     {
+        m_gameStatus.m_nowMode = GameStatus.Mode.PREPARE_CARD;
         Debug.Log("Gamemode: PREPARE_CARD");
 
-        yield return new WaitForSeconds(1);
+        m_updateFuncQueue.EnqueueOnceRunProcesses(
+                MakeAllCardsToRootDeck,
+                m_RootDeck.Shuffle,
+                MakeMyOppoDeck,
+                MakeInitialHands,
+                MakeInitialTrash,
 
-        MakeAllCardsToRootDeck();
-        m_RootDeck.Shuffle();
-        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
-        MakeMyOppoDeck();
-        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
-        MakeInitialHands();
-        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
-        MakeInitialTrash();
-        yield return StartCoroutine(AnimationManager.Instance.Coroutine_WaitAllAnimEnd());
+                // TODO: どっちから始めるか
+                m_gameStatus.SetTurnRandom
+            );
 
-        // TODO: どっちから始めるか
-        m_gameStatus.SetTurnRandom();
+        m_updateFuncQueue.EnqueueOnceRunProcess(Mode_Playing);
+    }
 
-        //↓必須処理
-        m_gameStatus.FinishMode();
-        yield break;
-    } 
-
-    IEnumerator Mode_Playing()
+    void Mode_Playing()
     {
-        switch (m_gameStatus.m_gamePhase)
-        {
-            case GameStatus.PlayingPhase.TURN_START:
-                break;
-            case GameStatus.PlayingPhase.DRAW:
-                break;
-            case GameStatus.PlayingPhase.OPERATE:
-                break;
-            case GameStatus.PlayingPhase.SERVE:
-                break;
-            case GameStatus.PlayingPhase.TURN_END:
-                break;
-        }
+        m_gameStatus.m_nowMode = GameStatus.Mode.PLAYING;
+        Debug.Log("Gamemode: PLAYING");
 
-        //↓必須処理
-        m_gameStatus.FinishMode();
-        yield break;
+        m_updateFuncQueue.EnqueueOnceRunProcess( StartTurn );
     }
 
     void MakeAllCardsToRootDeck()
@@ -275,4 +233,35 @@ public class GameManager : MonoBehaviour
             dealTrush = m_LeftTrush;
         }
     }
+
+    Deck m_handlingDeck;
+    Hand m_handlingHand;
+    Trush m_mainTrush, m_subTrush;
+    void StartTurn()
+    {
+        if (m_gameStatus.m_turn == GameStatus.Turn.MY_TURN)
+        {
+            m_handlingDeck = m_MyDeck;
+            m_handlingHand = m_MyHand;
+            m_mainTrush = m_RightTrush;
+            m_subTrush = m_LeftTrush;
+        }
+        //TURN_START:
+        m_updateFuncQueue.EnqueueLoopFunc( DrawFromDeck );
+    }
+    bool DrawFromDeck() {
+        return false;
+        //bool isCardDraged =
+        //    m_handlingDeck.m_cards[0].IsDraggedOn(m_handlingHand.m_rangeObj) ||
+        //    m_handlingDeck.m_cards[0].IsDraggedOn(m_mainTrush.m_rangeObj);
+    }
+    bool OpperateCardPhase()
+    {
+        return true;
+
+        //TODO: ゲーム終了判定
+        bool isGameEnd = false;
+        if (isGameEnd) return true;
+    }
+    void TurnEnd() { }
 }

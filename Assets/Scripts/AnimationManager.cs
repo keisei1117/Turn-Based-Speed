@@ -106,13 +106,4 @@ public class AnimationManager
             return false;
         }
     }
-
-    public IEnumerator Coroutine_WaitAllAnimEnd()
-    {
-        while (!IsAllAnimationEnd())
-        {
-            yield return null;
-        }
-        Debug.Log("All Animations end.");
-    }
 }

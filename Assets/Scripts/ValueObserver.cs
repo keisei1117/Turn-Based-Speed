@@ -22,7 +22,7 @@ public class ValueObserver : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        m_mode.text = "NowMode:\t" + GameManager.Instance.m_gameStatus.GetNowMode().ToString();
+        m_mode.text = "NowMode:\t" + GameManager.Instance.m_gameStatus.m_nowMode.ToString();
         m_phase.text = "NowPhase:\t" + GameManager.Instance.m_gameStatus.m_gamePhase.ToString();
         m_turn.text = "Turn:\t" + GameManager.Instance.m_gameStatus.m_turn;
         mouseTestTxt.text = "mouseTest:\t" + mouseTest;

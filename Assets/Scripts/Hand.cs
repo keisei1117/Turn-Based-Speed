@@ -3,10 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Hand : MonoBehaviour
+public class Hand : HoldCardObject
 {
-    public GameObject m_rangeObj;
-
     List<Card> m_cards;
 
     public const int MAX_CARDS_NUM = 6;
@@ -14,10 +12,13 @@ public class Hand : MonoBehaviour
     public const float SPACE_BETWEEN_CARDS = 2.5f;
 
     const int frameToSpend = 20;
+    public bool m_isFront { get; private set; }
 
     private void Awake()
     {
         m_cards = new List<Card>();
+        DisableReceiveDrop();
+        m_isFront = true;
     }
 
     // Start is called before the first frame update
@@ -35,7 +36,7 @@ public class Hand : MonoBehaviour
         return m_cards.Count < MAX_CARDS_NUM;
     }
 
-    public void AddCard(Card card)
+    override public void AddCard(Card card, bool doAnim = true)
     {
         if (!CanAddCard())
         {
@@ -44,9 +45,18 @@ public class Hand : MonoBehaviour
         card.transform.SetParent(this.transform.Find("Canvas").transform);
         m_cards.Add(card);
         card.transform.SetAsLastSibling();
+
+        // アニメーション処理
+        if (doAnim)
+            DoAddCardAnim();
+    }
+    public override void RemoveCard(Card card, bool doAnim)
+    {
+        m_cards.Remove(card);
+        DoMoveCardsAnim();
     }
 
-    public void DoMoveCardPosAnim()
+    public void DoMoveCardsAnim()
     {
         //カードの移動
         for (int i = 0; i < m_cards.Count; i++)
@@ -57,12 +67,16 @@ public class Hand : MonoBehaviour
         }
     }
 
+    // AddCardを行った後
     public void DoAddCardAnim()
     {
         //移動
-        DoMoveCardPosAnim();
+        DoMoveCardsAnim();
         //カードの裏返し
-        AnimationQueue.Instance.AddAnimToLastIndex(m_cards[m_cards.Count - 1].Anim_TurnOver(frameToSpend));
+        if (m_cards[m_cards.Count - 1].m_isFront != this.m_isFront)
+        {
+            AnimationQueue.Instance.AddAnimToLastIndex(m_cards[m_cards.Count - 1].Anim_TurnOver(frameToSpend));
+        }
     }
 
     public List<Vector3> CalcCardPosition()
@@ -86,5 +100,14 @@ public class Hand : MonoBehaviour
             cardxPos += SPACE_BETWEEN_CARDS;
         }
         return poses;
+    }
+
+    public override void CardDrop(Card droppedCard)
+    {
+        base.CardDrop(droppedCard);
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+        AddCard(droppedCard);
+
+        //DoAddCardAnim();
     }
 }

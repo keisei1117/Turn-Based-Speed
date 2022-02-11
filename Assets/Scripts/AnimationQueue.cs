@@ -64,7 +64,7 @@ public class AnimationQueue
             if (isEnd)
             {
                 m_animMethods[0].RemoveAt(i);
-                Debug.Log("animMethods remove");
+                //Debug.Log("animMethods remove");
             }
         }
 
@@ -77,7 +77,7 @@ public class AnimationQueue
 
     public void AddAnimToFirstIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
     {
-        Debug.Log("AddPlayingAnimation");
+        //Debug.Log("AddPlayingAnimation");
         MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
         if (m_animMethods.Count == 0)
             m_animMethods.Add(new List<MethodAndWaitFrames>());
@@ -85,19 +85,19 @@ public class AnimationQueue
     }
     public void AddAnimToLastIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
     {
-        Debug.Log("AddAnimToLastIndex");
+        //Debug.Log("AddAnimToLastIndex");
         MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
         m_animMethods[m_animMethods.Count - 1].Add(additionalMethod);
     }
     public void CreateNewEmptyAnimListToEnd()
     {
-        Debug.Log("CreateNewEmptyAnimListToEnd");
+        //Debug.Log("CreateNewEmptyAnimListToEnd");
         m_animMethods.Add(new List<MethodAndWaitFrames>());
     }
 
     public bool IsAllAnimationEnd()
     {
-        Debug.Log("m_animMethods.Count: " + m_animMethods.Count);
+        //Debug.Log("m_animMethods.Count: " + m_animMethods.Count);
         if (m_animMethods.Count == 0)
         {
             return true;

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class Card : MonoBehaviour,
+public class Card : HoldCardObject,
                     IDragHandler, IBeginDragHandler, IEndDragHandler
 {
     public enum Suit
@@ -23,62 +23,81 @@ public class Card : MonoBehaviour,
 
     static Sprite[] m_sprites;
 
-    Vector3 m_beforeDragPos;
-    Transform m_beforeDragParent;
-
     //flags
     public bool m_isDragging { get; private set; } = false;
     public bool m_canDrag;
 
+    private void Awake()
+    {
+        DisableReceiveDrop();
+    }
     private void Start()
     {
         transform.localScale = new Vector3(1, 1, 1);
         m_canDrag = false;
     }
-
     private void Update()
     {
     }
 
-    //TODO:ドラッグの処理
+    Card m_virtualCard;
+    //const float m_cursorSize = 0.01f;
+    //ドラッグの処理
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (!m_canDrag) return;
+        //半透明のカードを複製
+        m_virtualCard = Instantiate(this, GameManager.Instance.m_TopLayerCanvas.transform);
+        Color originColor = m_attachedObject.color;
+        m_virtualCard.m_attachedObject.color = new Color(originColor.r, originColor.g, originColor.b, 0.5f);
+    }
+
+    RaycastHit2D[] hits;
     public void OnDrag(PointerEventData eventData)
     {
         if (!m_canDrag) return;
-        Debug.Log("OnDrag");
+        //Debug.Log("OnDrag");
         Vector3 targetPos = Camera.main.ScreenToWorldPoint(eventData.position);
         targetPos.z = 0;
-        this.transform.position = targetPos;
+        m_virtualCard.transform.position = targetPos;
         m_isDragging = true;
-    }
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        m_beforeDragPos = this.transform.position;
-        m_beforeDragParent = this.transform.parent;
-        this.transform.SetParent(GameManager.Instance.m_TopLayerCanvas.transform);
-    }
 
+        if (hits != null)
+        {
+            foreach (var hit in hits)
+            {
+                HoldCardObject cardDroppedFuncs = hit.collider.gameObject.GetComponent<HoldCardObject>();
+                if (cardDroppedFuncs != null)
+                    cardDroppedFuncs.CardNotHover();
+            }
+        }
+        hits = Physics2D.RaycastAll(targetPos, new Vector3(0, 0, 1));
+        foreach(var hit in hits)
+        {
+            HoldCardObject cardDroppedFuncs = hit.collider.gameObject.GetComponent<HoldCardObject>();
+            if (cardDroppedFuncs != null)
+                cardDroppedFuncs.CardHover();
+        }
+    }
     public void OnEndDrag(PointerEventData eventData)
     {
-        Debug.Log("OnEndDrag");
-        this.transform.SetParent(m_beforeDragParent);
-        //this.transform.SetAsLastSibling(); 使わなくても勝手に一番下に設定される
-        AnimationQueue.Instance.AddAnimToFirstIndex(
-            Anim_StraightLineMove(m_beforeDragPos, 7));
+        if (!m_canDrag) return;
+        //Debug.Log("OnEndDrag");
+        if (m_virtualCard != null)
+            Destroy(m_virtualCard.gameObject);
+        m_virtualCard = null;
         m_isDragging = false;
+
+
+        Vector3 targetPos = Camera.main.ScreenToWorldPoint(eventData.position);
+        hits = Physics2D.RaycastAll(targetPos, new Vector3(0, 0, 1));
+        foreach (var hit in hits)
+        {
+            HoldCardObject cardDroppedFuncs = hit.collider.gameObject.GetComponent<HoldCardObject>();
+            if (cardDroppedFuncs != null)
+                cardDroppedFuncs.CardDrop(this);
+        }
     }
-
-    bool m_test; //てすと　消せ
-    // ref readonly ← C++の const bool& みたいなもん
-    public ref readonly bool AllowDragOnAndGetFlag(GameObject objToRegster)
-    {
-        
-        return ref m_test;
-    }
-
-    //public bool IsDraggedOn(GameObject obj)
-    //{
-
-    //}
 
     public void Initialize(Image imageObject, Suit suitVal, int numVal, bool isFront = false)
     {
@@ -151,7 +170,7 @@ public class Card : MonoBehaviour,
 
     public IEnumerator<bool> Anim_TurnOver(int frameToSpend = 20)
     {
-        Debug.Log("Anim_TurnOver start");
+        //Debug.Log("Anim_TurnOver start");
         int BeforeTurnOverframe = frameToSpend / 2;
         int AfterTurnOverframe = frameToSpend - BeforeTurnOverframe;
 
@@ -174,13 +193,13 @@ public class Card : MonoBehaviour,
         accurateRotarion.y = 0;
         this.transform.rotation = accurateRotarion;
 
-        Debug.Log("Anim_TurnOver end");
+        //Debug.Log("Anim_TurnOver end");
         yield return true;
     }
 
     public IEnumerator<bool> Anim_StraightLineMove(Vector3 afterPosition, int frameToSpend = 20)
     {
-        Debug.Log("Anim_StraightLineMove start");
+        //Debug.Log("Anim_StraightLineMove start");
 
         Vector3 distOfFrame = (afterPosition - this.transform.position) / frameToSpend;
         for (int i = 0; i < frameToSpend; i++)
@@ -190,7 +209,7 @@ public class Card : MonoBehaviour,
         }
         this.transform.SetPositionAndRotation(afterPosition, new Quaternion());
 
-        Debug.Log("Anim_StraightLineMove end");
+        //Debug.Log("Anim_StraightLineMove end");
         yield return true;
     }
 
@@ -224,5 +243,15 @@ public class Card : MonoBehaviour,
     {
         m_isFront = false;
         m_attachedObject.sprite = GetImage();
+    }
+
+    public override void AddCard(Card card, bool doAnim)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void RemoveCard(Card card, bool doAnim)
+    {
+        throw new System.NotImplementedException();
     }
 }

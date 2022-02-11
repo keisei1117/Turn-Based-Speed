@@ -29,7 +29,7 @@ public class WorkQueue
     public delegate bool Func(); //–ß‚è’l‚ªtrue‚Ì‚Æ‚«I‚í‚Á‚½‚Æ”»’f
     Queue<Func> m_Funcs;
 
-
+    //“o˜^‚µ‚½ŠÖ”‚ğ1‚ÂÀs
     public void RunFunc()
     {
         if (m_Funcs.Count == 0) return;
@@ -51,7 +51,7 @@ public class WorkQueue
     }
 
     //ˆê“x‚µ‚©Às‚µ‚È‚¢ŠÖ”‚ğ“o˜^
-    public void EnqueueOnceRunProcess(Action action, bool waitForAnimationEnd = true)
+    public void EnqueueOnceRunFunc(Action action, bool waitForAnimationEnd = true)
     {
         if (waitForAnimationEnd)
         {
@@ -65,11 +65,11 @@ public class WorkQueue
     }
 
     //ˆê“x‚µ‚©Às‚µ‚È‚¢ŠÖ”‚ğ‚Ü‚Æ‚ß‚Ä“o˜^
-    public void EnqueueOnceRunProcesses(params Action[] actions)
+    public void EnqueueOnceRunFuncs(params Action[] actions)
     {
         foreach (Action action in actions)
         {
-            EnqueueOnceRunProcess(action, true);
+            EnqueueOnceRunFunc(action, true);
         }
     }
 }

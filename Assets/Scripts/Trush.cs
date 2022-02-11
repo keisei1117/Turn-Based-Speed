@@ -4,6 +4,13 @@ using UnityEngine;
 
 public class Trush : Deck
 {
+    private void Awake()
+    {
+        m_cards = new List<Card>();
+        m_canDrop = false;
+        DisableReceiveDrop();
+        m_isFront = true;
+    }
     // Start is called before the first frame update
     void Start() {
     }
@@ -25,10 +32,5 @@ public class Trush : Deck
             AnimationQueue.Instance.AddAnimToLastIndex(
                 m_cards[m_cards.Count - 1].Anim_StraightLineMove(this.transform.position));
         }
-    }
-
-    public Card GetTopCard()
-    {
-        return m_cards[m_cards.Count - 1];
     }
 }

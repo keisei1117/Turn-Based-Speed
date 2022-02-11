@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6495169154340226914}
   - component: {fileID: 6449175902435405498}
+  - component: {fileID: 2672018535074070664}
   m_Layer: 0
   m_Name: Trush
   m_TagString: Untagged
@@ -44,7 +45,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a010856fb5dbdb42a57e2bc0f03bdb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_rangeObj: {fileID: 7609546880799663689}
+  m_canDrop: 0
+  m_dropRange: {fileID: 7609546880799663689}
+--- !u!61 &2672018535074070664
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1676140236360720952}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 2.5, y: 2.5}
+  m_EdgeRadius: 0
 --- !u!1 &2811943301514766621
 GameObject:
   m_ObjectHideFlags: 0
@@ -154,7 +182,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4759614483874098663, guid: c786f6bd1ea265846b461eb870abcc15, type: 3}
       propertyPath: m_Name
-      value: Range
+      value: DropRange
       objectReference: {fileID: 0}
     - target: {fileID: 5636801171141310564, guid: c786f6bd1ea265846b461eb870abcc15, type: 3}
       propertyPath: m_Pivot.x

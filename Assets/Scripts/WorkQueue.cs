@@ -28,10 +28,12 @@ public class WorkQueue
 
     public delegate bool Func(); //戻り値がtrueのとき終わったと判断
     Queue<Func> m_Funcs;
+    public bool m_stop { get; private set; } = false;
 
     //登録した関数を1つ実行
     public void RunFunc()
     {
+        if (m_stop) return;
         if (m_Funcs.Count == 0) return;
         bool isEnd = m_Funcs.Peek()();
         if (isEnd)
@@ -71,5 +73,15 @@ public class WorkQueue
         {
             EnqueueOnceRunFunc(action, true);
         }
+    }
+
+    // Stop と Restartは必ずセットで使う
+    public void Stop()
+    {
+        m_stop = true;
+    }
+    public void Restart()
+    {
+        m_stop = false;
     }
 }

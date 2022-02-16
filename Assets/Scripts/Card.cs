@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+using System;
+
 public class Card : HoldCardObject,
                     IDragHandler, IBeginDragHandler, IEndDragHandler
 {
@@ -20,16 +22,22 @@ public class Card : HoldCardObject,
     public int m_num { get; private set; }
     public bool m_isFront { get; private set; }
     public Image m_attachedObject;
+    public GameObject m_canDragSign;
 
     static Sprite[] m_sprites;
 
     //flags
     public bool m_isDragging { get; private set; } = false;
-    public bool m_canDrag;
+    public bool m_canDrag { get; private set; }
 
     private void Awake()
     {
         DisableReceiveDrop();
+        m_beginDragObserverList = new List<Action>();
+        m_endDragObserverList = new List<Action>();
+        if(m_happenHandlingObserverQueue == null)
+            m_happenHandlingObserverQueue = new Queue<Action>();
+        m_canDragSign.SetActive(false);
     }
     private void Start()
     {
@@ -40,9 +48,11 @@ public class Card : HoldCardObject,
     {
     }
 
-    Card m_virtualCard;
-    //const float m_cursorSize = 0.01f;
     //ドラッグの処理
+    Card m_virtualCard;
+    List<Action> m_beginDragObserverList;
+    List<Action> m_endDragObserverList;
+    static Queue<Action> m_happenHandlingObserverQueue;
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (!m_canDrag) return;
@@ -50,9 +60,14 @@ public class Card : HoldCardObject,
         m_virtualCard = Instantiate(this, GameManager.Instance.m_TopLayerCanvas.transform);
         Color originColor = m_attachedObject.color;
         m_virtualCard.m_attachedObject.color = new Color(originColor.r, originColor.g, originColor.b, 0.5f);
+
+        foreach (var action in m_beginDragObserverList)
+        {
+            action();
+        }
     }
 
-    RaycastHit2D[] hits;
+    RaycastHit2D[] hits; //カーソル上にあるオブジェクト
     public void OnDrag(PointerEventData eventData)
     {
         if (!m_canDrag) return;
@@ -88,16 +103,52 @@ public class Card : HoldCardObject,
         m_virtualCard = null;
         m_isDragging = false;
 
-
+        // ドラップされたオブジェクトを検出
         Vector3 targetPos = Camera.main.ScreenToWorldPoint(eventData.position);
         hits = Physics2D.RaycastAll(targetPos, new Vector3(0, 0, 1));
+
+        foreach (var aciton in m_endDragObserverList) //endDragObserverを実行
+        {
+            aciton();
+        }
         foreach (var hit in hits)
         {
             HoldCardObject cardDroppedFuncs = hit.collider.gameObject.GetComponent<HoldCardObject>();
             if (cardDroppedFuncs != null)
+            {
                 cardDroppedFuncs.CardDrop(this);
+
+                //happenHandlingObserverを実行
+                int count = m_happenHandlingObserverQueue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    m_happenHandlingObserverQueue.Dequeue()();
+                }
+            }
         }
     }
+    public void RegistBeginDragObserver(Action func)
+    {
+        m_beginDragObserverList.Add(func);
+    }
+    public void RegistEndDragObserver(Action func)
+    {
+        m_endDragObserverList.Add(func);
+    }
+    public void ClearDragObserverList()
+    {
+        m_beginDragObserverList.Clear();
+        m_endDragObserverList.Clear();
+    }
+    public static void EnqueueHappenHandlingObserver(Action func)
+    {
+        m_happenHandlingObserverQueue.Enqueue(func);
+    }
+    public static void ClearHappenHandlingObserver()
+    {
+        m_happenHandlingObserverQueue.Clear();
+    }
+
 
     public void Initialize(Image imageObject, Suit suitVal, int numVal, bool isFront = false)
     {
@@ -249,9 +300,40 @@ public class Card : HoldCardObject,
     {
         throw new System.NotImplementedException();
     }
-
     public override void RemoveCard(Card card, bool doAnim)
     {
         throw new System.NotImplementedException();
+    }
+    
+    public bool IsContinuous(Card other)
+    {
+        if(this.m_suit == Suit.Joker || other.m_suit == Suit.Joker) 
+            return true;
+
+        int big = this.m_num + 1;
+        int small = this.m_num - 1;
+        if (big == 14) big = 1;
+        if (small == 0) small = 13;
+        return other.m_num == big || other.m_num == small;
+    }
+    private void SetCanDrag(bool canDrag)
+    {
+        this.m_canDrag = canDrag;
+        m_canDragSign.SetActive(canDrag);
+    }
+    public void EnableDrag()
+    {
+        this.m_canDrag = true;
+        m_canDragSign.SetActive(true);
+    }
+    public void DisableDrag()
+    {
+        this.m_canDrag = false;
+        m_canDragSign.SetActive(false);
+    }
+
+    public HoldCardObject GetParentHoldCardObject()
+    {
+        return this.transform.parent.parent.GetComponent<HoldCardObject>();
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class Hand : HoldCardObject
 {
-    List<Card> m_cards;
+    public List<Card> m_cards { get; protected set; }
 
     public const int MAX_CARDS_NUM = 6;
     public const int INITIAL_CARDS_NUM = 4;
@@ -42,6 +42,15 @@ public class Hand : HoldCardObject
         {
             Debug.LogError("Hand can't have more card than MAX_CARDS_NUM.");
         }
+
+        Transform canvas = card.transform.parent; // Canvas <- Card
+        if (canvas != null)
+        {
+            Transform parent = canvas.parent; // HoldCardObject <- Canvas
+            //Debug.Log(card.name + "'s parent is " + parent.name);
+            parent.GetComponent<HoldCardObject>().RemoveCard(card, true);
+        }
+
         card.transform.SetParent(this.transform.Find("Canvas").transform);
         m_cards.Add(card);
         card.transform.SetAsLastSibling();
@@ -52,6 +61,7 @@ public class Hand : HoldCardObject
     }
     public override void RemoveCard(Card card, bool doAnim)
     {
+        //Debug.Log("Remove " + card.ToString() + " from " + this.name);
         m_cards.Remove(card);
         DoMoveCardsAnim();
     }

@@ -105,5 +105,9 @@ public class GameManager : MonoBehaviour
     private void FixedUpdate()
     {
         AnimationQueue.Instance.DoAnimation();
+
+        //3”{‘¬
+        AnimationQueue.Instance.DoAnimation();
+        AnimationQueue.Instance.DoAnimation();
     }
 }

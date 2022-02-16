@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 using UnityEngine.UI;
 
-public class Deck : HoldCardObject, IDropHandler
+public class Deck : HoldCardObject
 {
     public bool m_canDrop;
     public bool m_isFront { get; protected set; }
@@ -29,12 +29,6 @@ public class Deck : HoldCardObject, IDropHandler
     // Update is called once per frame
     void Update()
     {
-    }
-    public void OnDrop(PointerEventData eventData)
-    {
-        //Debug.Log(gameObject.name + "に" + eventData.pointerDrag.name + "がドロップされました。");
-        //foreach (GameObject item in eventData.hovered)
-        //    Debug.Log(gameObject.name + "に" + item.name + "がドロップされました。");
     }
 
     // カードを加える
@@ -67,6 +61,7 @@ public class Deck : HoldCardObject, IDropHandler
     }
     public override void RemoveCard(Card card, bool doAnim)
     {
+        //Debug.Log("Remove " + card.ToString() + " from " + this.name);
         m_cards.Remove(card);
     }
 

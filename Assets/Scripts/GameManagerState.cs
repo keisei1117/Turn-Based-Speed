@@ -264,7 +264,48 @@ class PlayingState : GameManagerState
             m_mainTrush = m_LeftTrush;
             m_subTrush = m_RightTrush;
         }
-        WorkQueue.Instance.EnqueueOnceRunFunc(DrawFromDeck);
+        //WorkQueue.Instance.EnqueueOnceRunFunc(DrawFromDeck);
+        //TODO: Draw, Discard, Combine, or Compress
+        WorkQueue.Instance.Stop();
+
+        Action commonPressedBehave = () =>
+        {
+            WorkQueue.Instance.Restart();
+
+            m_UIManager.DrawButton.ClearPressedBehave();
+            m_UIManager.DiscardButton.ClearPressedBehave();
+            m_UIManager.CombineButton.ClearPressedBehave();
+            m_UIManager.CompressButton.ClearPressedBehave();
+        };
+
+        // DrawButton
+        if (m_handlingDeck.m_cards.Count != 0)
+        {
+            m_UIManager.DrawButton.Enable();
+            m_UIManager.DrawButton.RegistPressedBehave(() =>
+            {
+                commonPressedBehave();
+            });
+        }
+
+        // DiscardButton
+        bool canDiscard = false;
+        foreach(var card in m_handlingHand.m_cards)
+        {
+            if (card.IsContinuous(m_LeftTrush.GetTopCard())) canDiscard = true;
+            if (card.IsContinuous(m_RightTrush.GetTopCard())) canDiscard = true;
+        }
+        if(canDiscard)
+        {
+            m_UIManager.DiscardButton.Enable();
+            m_UIManager.DiscardButton.RegistPressedBehave(() =>
+            {
+                commonPressedBehave();
+            });
+        }
+
+        // CombineButton
+        // CompressButton
     }
     void DrawFromDeck()
     {
@@ -333,14 +374,6 @@ class PlayingState : GameManagerState
         WorkQueue.Instance.EnqueueOnceRunFuncs(DiscardPhase);
     }
 
-    bool OpperateCardPhase()
-    {
-        return true;
-
-        //TODO: ÉQÅ[ÉÄèIóπîªíË
-        bool isGameEnd = false;
-        if (isGameEnd) return true;
-    }
     void DiscardPhase()
     {
         Debug.Log("Discard Phase");
@@ -363,8 +396,8 @@ class PlayingState : GameManagerState
 
 
                 // TurnEndButtonÇâüÇ≥ÇÍÇΩéûÇÃãììÆ
-                m_UIManager.EnableTurnEndButton();
-                m_UIManager.m_turnEndButtonClickedBehave = () =>
+                m_UIManager.TurnEndButton.Enable();
+                m_UIManager.TurnEndButton.RegistPressedBehave(() =>
                 {
                     WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
                     foreach (var card in m_handlingHand.m_cards)
@@ -373,7 +406,7 @@ class PlayingState : GameManagerState
                         card.ClearDragObserverList();
                         Card.ClearHappenHandlingObserver();
                     }
-                };
+                });
             }
             else
             {
@@ -421,9 +454,12 @@ class PlayingState : GameManagerState
     void TurnEnd()
     {
         Debug.Log("Turn End");
+
         //TODO:èIóπîªíË
-        m_UIManager.DisableTurnEndButton();
-        m_UIManager.m_turnEndButtonClickedBehave = null;
+
+
+        m_UIManager.TurnEndButton.Disable();
+        m_UIManager.TurnEndButton.ClearPressedBehave();
         m_gameStatus.SwitchTurn();
         WorkQueue.Instance.EnqueueOnceRunFunc(StartTurn);
     }

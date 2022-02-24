@@ -10,9 +10,6 @@ public class Deck : HoldCardObject
     public bool m_canDrop;
     public bool m_isFront { get; protected set; }
 
-    //m_cards[0]が一番下
-    public List<Card> m_cards { get; protected set; }
-
     private void Awake()
     {
         m_cards = new List<Card>();
@@ -34,17 +31,7 @@ public class Deck : HoldCardObject
     // カードを加える
     override public void AddCard(Card card, bool doAnim = true)
     {
-        Transform canvas = card.transform.parent; // Canvas <- Card
-        if (canvas != null)
-        {
-            Transform parent = canvas.parent; // HoldCardObject <- Canvas
-            //Debug.Log(card.name + "'s parent is " + parent.name);
-            parent.GetComponent<HoldCardObject>().RemoveCard(card, true);
-        }
-
-        card.transform.SetParent(this.transform.Find("Canvas").transform); // Cardの親をこのオブジェクトに設定
-        m_cards.Add(card);
-        card.transform.SetAsLastSibling();//描写を一番最後に設定
+        base.AddCard(card, doAnim);
 
         if (doAnim)
         {
@@ -58,11 +45,6 @@ public class Deck : HoldCardObject
                 AnimationQueue.Instance.AddAnimToLastIndex(card.Anim_StraightLineMoveWithTurnOver(this.gameObject.transform.position));
             }
         }
-    }
-    public override void RemoveCard(Card card, bool doAnim)
-    {
-        //Debug.Log("Remove " + card.ToString() + " from " + this.name);
-        m_cards.Remove(card);
     }
 
     // 一番上のCardを返す
@@ -173,7 +155,5 @@ public class Deck : HoldCardObject
         base.CardDrop(droppedCard);
         AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
         this.AddCard(droppedCard);
-        //AnimationQueue.Instance.AddAnimToLastIndex(droppedCard.Anim_StraightLineMoveWithTurnOver(this.gameObject.transform.position));
     }
-
 }

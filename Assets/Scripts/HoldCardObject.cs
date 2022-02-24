@@ -1,14 +1,37 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 public abstract class HoldCardObject : MonoBehaviour
 {
+    //m_cards[0]が一番下
+    public List<Card> m_cards { get; protected set; }
+
     bool m_canReceiveDrop;
     public GameObject m_dropRange;
     public GameObject m_canDropSign;
 
-    abstract public void AddCard(Card card, bool doAnim);
-    abstract public void RemoveCard(Card card, bool doAnim);
+    virtual public void AddCard(Card card, bool doAnim)
+    {
+        Transform canvas = card.transform.parent; // Canvas <- Card
+        if (canvas != null)
+        {
+            Transform parent = canvas.parent; // HoldCardObject <- Canvas
+            //Debug.Log(card.name + "'s parent is " + parent.name);
+            parent.GetComponent<HoldCardObject>().RemoveCard(card, true);
+        }
+
+        card.transform.SetParent(this.transform.Find("Canvas").transform); // Cardの親をこのオブジェクトに設定
+        m_cards.Add(card);
+        card.transform.SetAsLastSibling(); // 描写を一番最後に設定
+    }
+
+    virtual public void RemoveCard(Card card, bool doAnim)
+    {
+        //Debug.Log("Remove " + card.ToString() + " from " + this.name);
+        m_cards.Remove(card);
+    }
 
     public void EnableReceiveDrop()
     {

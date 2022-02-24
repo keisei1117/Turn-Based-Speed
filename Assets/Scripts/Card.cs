@@ -240,9 +240,9 @@ public class Card : HoldCardObject,
             this.transform.Rotate(new Vector3(0, -rotateAnglePerFrame, 0));
             yield return false;
         }
-        Quaternion accurateRotarion = this.transform.rotation;
-        accurateRotarion.y = 0;
-        this.transform.rotation = accurateRotarion;
+        Quaternion accurateRotation = this.transform.rotation;
+        accurateRotation.y = 0;
+        this.transform.rotation = accurateRotation;
 
         //Debug.Log("Anim_TurnOver end");
         yield return true;
@@ -264,15 +264,42 @@ public class Card : HoldCardObject,
         yield return true;
     }
 
-    public IEnumerator<bool> Anim_StraightLineMoveWithTurnOver(Vector3 afterPosition, int framToSpend = 20)
+    public IEnumerator<bool> Anim_StraightLineMoveWithTurnOver(Vector3 afterPosition, int frameToSpend = 20)
     {
-        IEnumerator<bool> lineMove = Anim_StraightLineMove(afterPosition, framToSpend);
-        IEnumerator<bool> turnOver = Anim_TurnOver(framToSpend);
+        IEnumerator<bool> lineMove = Anim_StraightLineMove(afterPosition, frameToSpend);
+        IEnumerator<bool> turnOver = Anim_TurnOver(frameToSpend);
 
         while(!lineMove.Current || !turnOver.Current)
         {
             lineMove.MoveNext();
             turnOver.MoveNext();
+            yield return false;
+        }
+        yield return true;
+    }
+
+    public IEnumerator<bool> Anim_Rotate(float afterRotation, int frameToSpend = 20)
+    {
+        float rotateAnglePerFrame = (afterRotation - this.transform.rotation.z) / frameToSpend;
+        for(int i = 0; i < frameToSpend; i++)
+        {
+            this.transform.Rotate(0,0,rotateAnglePerFrame);
+            yield return false;
+        }
+
+        this.transform.SetPositionAndRotation(this.transform.position, new Quaternion(0, 0, afterRotation, 0));
+        yield return true;
+    }
+
+    public IEnumerator<bool> Anim_StraightLineMoveWithRotate(Vector3 afterPosition, float afterRotation, int frameToSpend = 20)
+    {
+        IEnumerator<bool> lineMove = Anim_StraightLineMove(afterPosition, frameToSpend);
+        IEnumerator<bool> rotate = Anim_Rotate(afterRotation, frameToSpend);
+
+        while (!lineMove.Current || !rotate.Current)
+        {
+            lineMove.MoveNext();
+            rotate.MoveNext();
             yield return false;
         }
         yield return true;
@@ -316,11 +343,12 @@ public class Card : HoldCardObject,
         if (small == 0) small = 13;
         return other.m_num == big || other.m_num == small;
     }
-    private void SetCanDrag(bool canDrag)
+
+    public bool CanCompress(Card other)
     {
-        this.m_canDrag = canDrag;
-        m_canDragSign.SetActive(canDrag);
+        return this.m_num == other.m_num;
     }
+
     public void EnableDrag()
     {
         this.m_canDrag = true;

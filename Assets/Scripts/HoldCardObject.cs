@@ -25,6 +25,17 @@ public abstract class HoldCardObject : MonoBehaviour
         card.transform.SetParent(this.transform.Find("Canvas").transform); // Cardの親をこのオブジェクトに設定
         m_cards.Add(card);
         card.transform.SetAsLastSibling(); // 描写を一番最後に設定
+
+        if(card.m_mode == Card.MODE.COMBINED || card.m_mode == Card.MODE.COMPRESSED)
+        {
+            foreach(Card containedCard in card.m_cards)
+            {
+                containedCard.transform.SetParent(this.transform.Find("Canvas").transform); // Cardの親をこのオブジェクトに設定
+                containedCard.transform.SetAsLastSibling(); // 描写を一番最後に設定
+            }
+        }
+        m_dropRange.transform.SetAsLastSibling();
+        m_canDropSign.transform.SetAsLastSibling();
     }
 
     virtual public void RemoveCard(Card card, bool doAnim)

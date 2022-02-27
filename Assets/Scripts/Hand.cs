@@ -107,4 +107,39 @@ public class Hand : HoldCardObject
 
         //DoAddCardAnim();
     }
+    public int GetSingleCardNum()
+    {
+        int count = 0;
+        foreach (Card card in m_cards)
+        {
+            if (card.m_mode == Card.MODE.SINGLE) count++;
+        }
+        return count;
+    }
+    public int GetCanCombineOrCompressCardNum() // ジョーカーも除く
+    {
+        int count = 0;
+        foreach(Card card in m_cards)
+        {
+            if (card.m_mode == Card.MODE.SINGLE && card.m_suit != Card.Suit.Joker) count++;
+        }
+        return count;
+    }
+
+    public void SetAllSingleCardsMode(Card.MODE mode)
+    {
+        foreach(Card card in m_cards)
+        {
+            if (card.m_mode == Card.MODE.SINGLE)
+                card.SetMode(mode);
+        }
+    }
+    public void SetAllWaitCardModeToSingle()
+    {
+        foreach(Card card in m_cards)
+        {
+            if (card.m_mode == Card.MODE.WAIT_COMBINE || card.m_mode == Card.MODE.WAIT_COMPRESS)
+                card.SetMode(Card.MODE.SINGLE);
+        }
+    }
 }

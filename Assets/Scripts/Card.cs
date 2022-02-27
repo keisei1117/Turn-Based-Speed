@@ -17,7 +17,6 @@ public class Card : HoldCardObject,
         Spade,
         Joker,
     }
-
     public Suit m_suit { get; private set; }
     public int m_num { get; private set; }
     public bool m_isFront { get; private set; }
@@ -25,6 +24,18 @@ public class Card : HoldCardObject,
     public GameObject m_canDragSign;
 
     static Sprite[] m_sprites;
+
+    public enum MODE
+    {
+        SINGLE,
+        COMBINED,
+        COMPRESSED,
+        WAIT_COMBINE,
+        WAIT_COMPRESS,
+        CONTAINED
+    }
+    //public MODE m_mode { get; private set; }
+    public MODE m_mode;
 
     //flags
     public bool m_isDragging { get; private set; } = false;
@@ -38,6 +49,9 @@ public class Card : HoldCardObject,
         if(m_happenHandlingObserverQueue == null)
             m_happenHandlingObserverQueue = new Queue<Action>();
         m_canDragSign.SetActive(false);
+
+        m_cards = new List<Card>();
+        m_mode = MODE.SINGLE;
     }
     private void Start()
     {
@@ -49,7 +63,7 @@ public class Card : HoldCardObject,
     }
 
     //ドラッグの処理
-    Card m_virtualCard;
+    List<Card> m_virtualCards = new List<Card>();
     List<Action> m_beginDragObserverList;
     List<Action> m_endDragObserverList;
     static Queue<Action> m_happenHandlingObserverQueue;
@@ -57,9 +71,17 @@ public class Card : HoldCardObject,
     {
         if (!m_canDrag) return;
         //半透明のカードを複製
-        m_virtualCard = Instantiate(this, GameManager.Instance.m_TopLayerCanvas.transform);
+        Card virtualCard = Instantiate(this, GameManager.Instance.m_TopLayerCanvas.transform);
         Color originColor = m_attachedObject.color;
-        m_virtualCard.m_attachedObject.color = new Color(originColor.r, originColor.g, originColor.b, 0.5f);
+        virtualCard.m_attachedObject.color = new Color(originColor.r, originColor.g, originColor.b, 0.5f);
+        m_virtualCards.Add(virtualCard);
+        foreach(Card subCard in m_cards)
+        {
+            Card virtualSubCard = Instantiate(subCard, GameManager.Instance.m_TopLayerCanvas.transform);
+            Color subOriginColor = m_attachedObject.color;
+            virtualSubCard.m_attachedObject.color = new Color(subOriginColor.r, subOriginColor.g, subOriginColor.b, 0.5f);
+            m_virtualCards.Add(virtualSubCard);
+        }
 
         foreach (var action in m_beginDragObserverList)
         {
@@ -74,7 +96,10 @@ public class Card : HoldCardObject,
         //Debug.Log("OnDrag");
         Vector3 targetPos = Camera.main.ScreenToWorldPoint(eventData.position);
         targetPos.z = 0;
-        m_virtualCard.transform.position = targetPos;
+        foreach (Card c in m_virtualCards)
+        {
+            c.transform.position = targetPos;
+        }
         m_isDragging = true;
 
         if (hits != null)
@@ -98,9 +123,12 @@ public class Card : HoldCardObject,
     {
         if (!m_canDrag) return;
         //Debug.Log("OnEndDrag");
-        if (m_virtualCard != null)
-            Destroy(m_virtualCard.gameObject);
-        m_virtualCard = null;
+        foreach(Card c in m_virtualCards)
+        {
+            if (c != null)
+                Destroy(c.gameObject);
+        }
+        m_virtualCards.Clear();
         m_isDragging = false;
 
         // ドラップされたオブジェクトを検出
@@ -127,6 +155,7 @@ public class Card : HoldCardObject,
             }
         }
     }
+
     public void RegistBeginDragObserver(Action func)
     {
         m_beginDragObserverList.Add(func);
@@ -256,9 +285,17 @@ public class Card : HoldCardObject,
         for (int i = 0; i < frameToSpend; i++)
         {
             this.transform.position += distOfFrame;
+            if(m_mode == MODE.COMBINED)
+            {
+                m_cards[0].transform.position += distOfFrame;
+            }
             yield return false;
         }
-        this.transform.SetPositionAndRotation(afterPosition, new Quaternion());
+        this.transform.position = afterPosition;
+        if (m_mode == MODE.COMBINED)
+        {
+            m_cards[0].transform.position = afterPosition;
+        }
 
         //Debug.Log("Anim_StraightLineMove end");
         yield return true;
@@ -287,7 +324,7 @@ public class Card : HoldCardObject,
             yield return false;
         }
 
-        this.transform.SetPositionAndRotation(this.transform.position, new Quaternion(0, 0, afterRotation, 0));
+        this.transform.eulerAngles = new Vector3(0, 0, afterRotation);
         yield return true;
     }
 
@@ -296,10 +333,16 @@ public class Card : HoldCardObject,
         IEnumerator<bool> lineMove = Anim_StraightLineMove(afterPosition, frameToSpend);
         IEnumerator<bool> rotate = Anim_Rotate(afterRotation, frameToSpend);
 
-        while (!lineMove.Current || !rotate.Current)
+        while (!lineMove.Current && !rotate.Current)
         {
-            lineMove.MoveNext();
-            rotate.MoveNext();
+            if(lineMove.Current == false)
+            {
+                lineMove.MoveNext();
+            }
+            if (rotate.Current == false)
+            {
+                rotate.MoveNext();
+            }
             yield return false;
         }
         yield return true;
@@ -323,15 +366,56 @@ public class Card : HoldCardObject,
         m_attachedObject.sprite = GetImage();
     }
 
-    public override void AddCard(Card card, bool doAnim)
+    public override void AddCard(Card card, bool doAnim = true)
     {
-        throw new System.NotImplementedException();
+        Debug.Assert(m_mode == MODE.WAIT_COMBINE || m_mode == MODE.WAIT_COMBINE);
+
+        Transform preCanvas = card.transform.parent; // Canvas <- Card
+
+
+        m_cards.Add(card);
+        card.transform.SetAsLastSibling(); // 描写を一番最後に設定
+
+        //Combine
+        if (m_mode == MODE.WAIT_COMBINE)
+        {
+            Debug.Assert(m_cards.Count == 1);
+
+            m_num = (this.m_num + m_cards[0].m_num) % 13;
+            m_mode = MODE.COMBINED;
+            card.SetMode(MODE.CONTAINED);
+
+            AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+            AnimationQueue.Instance.AddAnimToLastIndex(m_cards[0].Anim_StraightLineMoveWithRotate(this.transform.position, this.transform.rotation.z + 90));
+        }
+
+        //Compress
+        if (m_mode == MODE.WAIT_COMPRESS)
+        {
+            throw new System.NotImplementedException();
+            Debug.Assert(m_cards.Count > 1);
+            //m_mode = MODE.COMPRESSED;
+
+            const float gap = 10;
+            Vector3 pos0 = this.transform.position;
+            Vector3 pos1 = this.transform.position;
+            pos0.y -= gap;
+            pos1.y += gap;
+            AnimationQueue.Instance.AddAnimToLastIndex(m_cards[0].Anim_StraightLineMove(pos0));
+            AnimationQueue.Instance.AddAnimToLastIndex(m_cards[1].Anim_StraightLineMove(pos1));
+        }
+
+        //Hand内の移動は重ね終わった後にやる
+        if (preCanvas != null)
+        {
+            Transform parent = preCanvas.parent; // HoldCardObject <- Canvas
+            //Debug.Log(card.name + "'s parent is " + parent.name);
+            AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+            parent.GetComponent<HoldCardObject>().RemoveCard(card, true);
+        }
+
     }
-    public override void RemoveCard(Card card, bool doAnim)
-    {
-        throw new System.NotImplementedException();
-    }
-    
+
     public bool IsContinuous(Card other)
     {
         if(this.m_suit == Suit.Joker || other.m_suit == Suit.Joker) 
@@ -353,15 +437,37 @@ public class Card : HoldCardObject,
     {
         this.m_canDrag = true;
         m_canDragSign.SetActive(true);
+        //Debug.Log(name + "'s drag is enabled");
     }
     public void DisableDrag()
     {
         this.m_canDrag = false;
         m_canDragSign.SetActive(false);
+        //Debug.Log(name + "'s drag is disabled");
     }
 
     public HoldCardObject GetParentHoldCardObject()
     {
         return this.transform.parent.parent.GetComponent<HoldCardObject>();
+    }
+
+    public void SetMode(MODE mode)
+    {
+        m_mode = mode;
+        if(m_mode == MODE.CONTAINED)
+        {
+            this.GetComponent<Image>().raycastTarget = false;
+        }
+        else
+        {
+            this.GetComponent<Image>().raycastTarget = true;
+        }
+    }
+
+    override public void CardDrop(Card droppedCard)
+    {
+        base.CardDrop(droppedCard);
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+        AddCard(droppedCard);
     }
 }

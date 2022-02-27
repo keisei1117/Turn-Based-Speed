@@ -4,12 +4,15 @@ using UnityEngine;
 
 public class Trush : Deck
 {
+    public GameObject mask;
+
     private void Awake()
     {
         m_cards = new List<Card>();
         m_canDrop = false;
         DisableReceiveDrop();
         m_isFront = true;
+        DisableMask();
     }
     // Start is called before the first frame update
     void Start() {
@@ -32,5 +35,20 @@ public class Trush : Deck
             AnimationQueue.Instance.AddAnimToLastIndex(
                 m_cards[m_cards.Count - 1].Anim_StraightLineMove(this.transform.position));
         }
+    }
+
+    public override void AddCard(Card card, bool doAnim = true)
+    {
+        mask.transform.SetAsLastSibling();
+        base.AddCard(card, doAnim);
+    }
+
+    public void EnableMask()
+    {
+        mask.SetActive(true);
+    }
+    public void DisableMask()
+    {
+        mask.SetActive(false);
     }
 }

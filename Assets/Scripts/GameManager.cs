@@ -109,5 +109,6 @@ public class GameManager : MonoBehaviour
         //3”{‘¬
         AnimationQueue.Instance.DoAnimation();
         AnimationQueue.Instance.DoAnimation();
+        AnimationQueue.Instance.DoAnimation();
     }
 }

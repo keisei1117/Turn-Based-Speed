@@ -22,6 +22,8 @@ public class Card : HoldCardObject,
     public bool m_isFront { get; private set; }
     public Image m_attachedObject;
     public GameObject m_canDragSign;
+    public GameObject m_combinedSign;
+    public GameObject m_compressedSign;
 
     static Sprite[] m_sprites;
 
@@ -30,6 +32,7 @@ public class Card : HoldCardObject,
         SINGLE,
         COMBINED,
         COMPRESSED,
+        COMPRESSING,
         WAIT_COMBINE,
         WAIT_COMPRESS,
         CONTAINED
@@ -285,16 +288,22 @@ public class Card : HoldCardObject,
         for (int i = 0; i < frameToSpend; i++)
         {
             this.transform.position += distOfFrame;
-            if(m_mode == MODE.COMBINED)
+            if(m_mode == MODE.COMBINED || m_mode == MODE.COMPRESSED || m_mode == MODE.COMPRESSING)
             {
-                m_cards[0].transform.position += distOfFrame;
+                foreach(Card card in m_cards)
+                {
+                    card.transform.position += distOfFrame;
+                }
             }
             yield return false;
         }
         this.transform.position = afterPosition;
-        if (m_mode == MODE.COMBINED)
+        if (m_mode == MODE.COMBINED || m_mode == MODE.COMPRESSED || m_mode == MODE.COMPRESSING)
         {
-            m_cards[0].transform.position = afterPosition;
+            foreach (Card card in m_cards)
+            {
+                card.transform.position = afterPosition;
+            }
         }
 
         //Debug.Log("Anim_StraightLineMove end");
@@ -368,7 +377,8 @@ public class Card : HoldCardObject,
 
     public override void AddCard(Card card, bool doAnim = true)
     {
-        Debug.Assert(m_mode == MODE.WAIT_COMBINE || m_mode == MODE.WAIT_COMBINE);
+        Debug.Assert(m_mode == MODE.WAIT_COMBINE || m_mode == MODE.WAIT_COMPRESS
+             || m_mode == MODE.COMPRESSING);
 
         Transform preCanvas = card.transform.parent; // Canvas <- Card
 
@@ -382,7 +392,7 @@ public class Card : HoldCardObject,
             Debug.Assert(m_cards.Count == 1);
 
             m_num = (this.m_num + m_cards[0].m_num) % 13;
-            m_mode = MODE.COMBINED;
+            this.SetMode(MODE.COMBINED);
             card.SetMode(MODE.CONTAINED);
 
             AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
@@ -390,19 +400,15 @@ public class Card : HoldCardObject,
         }
 
         //Compress
-        if (m_mode == MODE.WAIT_COMPRESS)
+        if (m_mode == MODE.WAIT_COMPRESS || m_mode == MODE.COMPRESSING)
         {
-            throw new System.NotImplementedException();
-            Debug.Assert(m_cards.Count > 1);
-            //m_mode = MODE.COMPRESSED;
+            Debug.Assert(m_cards.Count >= 1);
 
-            const float gap = 10;
-            Vector3 pos0 = this.transform.position;
-            Vector3 pos1 = this.transform.position;
-            pos0.y -= gap;
-            pos1.y += gap;
-            AnimationQueue.Instance.AddAnimToLastIndex(m_cards[0].Anim_StraightLineMove(pos0));
-            AnimationQueue.Instance.AddAnimToLastIndex(m_cards[1].Anim_StraightLineMove(pos1));
+            this.SetMode(MODE.COMPRESSING);
+            card.SetMode(Card.MODE.CONTAINED);
+
+            AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+            AnimationQueue.Instance.AddAnimToLastIndex(card.Anim_StraightLineMove(this.transform.position));
         }
 
         //Handì‡ÇÃà⁄ìÆÇÕèdÇÀèIÇÌÇ¡ÇΩå„Ç…Ç‚ÇÈ
@@ -428,9 +434,14 @@ public class Card : HoldCardObject,
         return other.m_num == big || other.m_num == small;
     }
 
-    public bool CanCompress(Card other)
+    public bool CanCompressTothis(Card addCard)
     {
-        return this.m_num == other.m_num;
+        if (this == addCard) return false;
+        if (this.m_suit == Suit.Joker || addCard.m_suit == Suit.Joker) return false;
+        if (this.m_mode == MODE.COMBINED || this.m_mode == MODE.COMPRESSED) return false; //MODE.COMPRESSINGÇÕãñÇ∑
+        if (addCard.m_mode == MODE.COMBINED || addCard.m_mode == MODE.COMPRESSED || addCard.m_mode == MODE.COMPRESSING) return false;
+        if (this.m_num != addCard.m_num) return false;
+        return true;
     }
 
     public void EnableDrag()
@@ -454,7 +465,10 @@ public class Card : HoldCardObject,
     public void SetMode(MODE mode)
     {
         m_mode = mode;
-        if(m_mode == MODE.CONTAINED)
+        m_compressedSign.gameObject.SetActive(m_mode == MODE.COMPRESSED || m_mode == MODE.COMPRESSING);
+        m_combinedSign.gameObject.SetActive(m_mode == MODE.COMBINED);
+
+        if (m_mode == MODE.CONTAINED)
         {
             this.GetComponent<Image>().raycastTarget = false;
         }
@@ -470,4 +484,5 @@ public class Card : HoldCardObject,
         AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
         AddCard(droppedCard);
     }
+
 }

@@ -81,7 +81,6 @@ public class GameStatus
             m_turn = Turn.MY_TURN;
         }
     }
-
     public void ProceedGamePhase()
     {
         if (m_gamePhase == PlayingPhase.TURN_END)

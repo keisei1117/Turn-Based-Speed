@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class AnimationQueue
 {
@@ -75,24 +76,46 @@ public class AnimationQueue
         }
     }
 
-    public void AddAnimToFirstIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
-    {
-        //Debug.Log("AddPlayingAnimation");
-        MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
-        if (m_animMethods.Count == 0)
-            m_animMethods.Add(new List<MethodAndWaitFrames>());
-        m_animMethods[0].Add(additionalMethod);
-    }
+    //public void AddAnimToFirstIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
+    //{
+    //    //Debug.Log("AddPlayingAnimation");
+    //    MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
+    //    if (m_animMethods.Count == 0)
+    //        m_animMethods.Add(new List<MethodAndWaitFrames>());
+    //    m_animMethods[0].Add(additionalMethod);
+    //}
     public void AddAnimToLastIndex(IEnumerator<bool> retValOfAnimMethod, int waitFrames = 0)
     {
         //Debug.Log("AddAnimToLastIndex");
         MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(retValOfAnimMethod, waitFrames);
         m_animMethods[m_animMethods.Count - 1].Add(additionalMethod);
+
+        if(m_animMethods[m_animMethods.Count - 1].Count > 100)
+        {
+            Debug.LogError("Last index count of animationQueue is more than 100.");
+        }
+    }
+    public void AddOnceRunMethodToLastIndex(Action action)
+    {
+        //Debug.Log("AddOnceRunMethodToLastIndex");
+        IEnumerator<bool> enumerator()
+        {
+            action();
+            yield return true;
+        }
+        //MethodAndWaitFrames additionalMethod = new MethodAndWaitFrames(enumerator());
+        //m_animMethods[m_animMethods.Count - 1].Add(additionalMethod);
+        AddAnimToLastIndex(enumerator());
     }
     public void CreateNewEmptyAnimListToEnd()
     {
         //Debug.Log("CreateNewEmptyAnimListToEnd");
         m_animMethods.Add(new List<MethodAndWaitFrames>());
+
+        if (m_animMethods.Count > 100)
+        {
+            Debug.LogError("Count of animationQueue is more than 100.");
+        }
     }
 
     public bool IsAllAnimationEnd()

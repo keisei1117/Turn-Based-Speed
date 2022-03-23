@@ -18,7 +18,8 @@ public class Card : HoldCardObject,
         Joker,
     }
     public Suit m_suit { get; private set; }
-    public int m_num { get; private set; }
+    public int m_num;
+    //{ get; private set; }
     public bool m_isFront { get; private set; }
     public Image m_attachedObject;
     public GameObject m_canDragSign;
@@ -42,7 +43,8 @@ public class Card : HoldCardObject,
 
     //flags
     public bool m_isDragging { get; private set; } = false;
-    public bool m_canDrag { get; private set; }
+    public bool m_canDrag;
+    //{ get; private set; }
 
     private void Awake()
     {
@@ -283,6 +285,15 @@ public class Card : HoldCardObject,
     public IEnumerator<bool> Anim_StraightLineMove(Vector3 afterPosition, int frameToSpend = 20)
     {
         //Debug.Log("Anim_StraightLineMove start");
+        Transform originLayer = this.transform.parent;
+        if (originLayer == null)
+            Debug.LogError("couldn't find canvas.");
+
+        this.transform.SetParent(GameManager.Instance.m_TopLayerCanvas.transform);
+        foreach(Card card in m_cards)
+        {
+            card.transform.SetParent(GameManager.Instance.m_TopLayerCanvas.transform);
+        }
 
         Vector3 distOfFrame = (afterPosition - this.transform.position) / frameToSpend;
         for (int i = 0; i < frameToSpend; i++)
@@ -306,6 +317,11 @@ public class Card : HoldCardObject,
             }
         }
 
+        this.transform.SetParent(originLayer);
+        foreach (Card card in m_cards)
+        {
+            card.transform.SetParent(originLayer);
+        }
         //Debug.Log("Anim_StraightLineMove end");
         yield return true;
     }
@@ -397,6 +413,11 @@ public class Card : HoldCardObject,
 
             AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
             AnimationQueue.Instance.AddAnimToLastIndex(m_cards[0].Anim_StraightLineMoveWithRotate(this.transform.position, this.transform.rotation.z + 90));
+            AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+            AnimationQueue.Instance.AddOnceRunMethodToLastIndex(() =>
+            {
+                m_combinedSign.gameObject.SetActive(true);
+            });
         }
 
         //Compress
@@ -409,6 +430,11 @@ public class Card : HoldCardObject,
 
             AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
             AnimationQueue.Instance.AddAnimToLastIndex(card.Anim_StraightLineMove(this.transform.position));
+            AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+            AnimationQueue.Instance.AddOnceRunMethodToLastIndex(() =>
+            {
+                m_compressedSign.gameObject.SetActive(true);
+            });
         }
 
         //Handì‡ÇÃà⁄ìÆÇÕèdÇÀèIÇÌÇ¡ÇΩå„Ç…Ç‚ÇÈ
@@ -465,8 +491,8 @@ public class Card : HoldCardObject,
     public void SetMode(MODE mode)
     {
         m_mode = mode;
-        m_compressedSign.gameObject.SetActive(m_mode == MODE.COMPRESSED || m_mode == MODE.COMPRESSING);
-        m_combinedSign.gameObject.SetActive(m_mode == MODE.COMBINED);
+        //m_compressedSign.gameObject.SetActive(m_mode == MODE.COMPRESSED || m_mode == MODE.COMPRESSING);
+        //m_combinedSign.gameObject.SetActive(m_mode == MODE.COMBINED);
 
         if (m_mode == MODE.CONTAINED)
         {

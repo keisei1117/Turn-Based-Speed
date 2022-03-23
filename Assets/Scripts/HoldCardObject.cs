@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public abstract class HoldCardObject : MonoBehaviour
 {
     //m_cards[0]が一番下
-    public List<Card> m_cards { get; protected set; }
+    public List<Card> m_cards;// { get; protected set; }
 
     bool m_canReceiveDrop;
     public GameObject m_dropRange;

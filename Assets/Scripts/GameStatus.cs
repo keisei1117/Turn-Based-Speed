@@ -53,7 +53,6 @@ public class GameStatus
         }
         Debug.Log("Result of SetTurnRandom: m_turn == " + m_turn.ToString());
     }
-
     public bool IsMyTurn()
     {
         return m_turn == Turn.MY_TURN;
@@ -80,15 +79,5 @@ public class GameStatus
         {
             m_turn = Turn.MY_TURN;
         }
-    }
-    public void ProceedGamePhase()
-    {
-        if (m_gamePhase == PlayingPhase.TURN_END)
-        {
-            m_gamePhase = PlayingPhase.TURN_START;
-            SwitchTurn();
-            return;
-        }
-        m_gamePhase++;
     }
 }

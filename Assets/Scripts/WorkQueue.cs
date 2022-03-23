@@ -55,6 +55,7 @@ public class WorkQueue
     //一度しか実行しない関数を登録
     public void EnqueueOnceRunFunc(Action action, bool waitForAnimationEnd = true)
     {
+
         if (waitForAnimationEnd)
         {
             m_Funcs.Enqueue(AnimationQueue.Instance.IsAllAnimationEnd);
@@ -64,6 +65,11 @@ public class WorkQueue
             action();
             return true;
         });
+
+        if (m_Funcs.Count > 100)
+        {
+            Debug.LogError("Count of m_Funcs is more than 100.");
+        }
     }
 
     //一度しか実行しない関数をまとめて登録

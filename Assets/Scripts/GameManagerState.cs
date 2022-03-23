@@ -65,7 +65,11 @@ class PrepareCardState : GameManagerState
         // やる処理をすべて登録しておく
         WorkQueue.Instance.EnqueueOnceRunFuncs(
                 MakeAllCardsToRootDeck,
-                m_RootDeck.Shuffle,
+                () =>
+                {
+                    AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+                    m_RootDeck.Shuffle();
+                },
                 MakeMyOppoDeck,
                 MakeInitialHands,
                 MakeInitialTrash,
@@ -98,11 +102,7 @@ class PrepareCardState : GameManagerState
     {
         Debug.Log("Making All Root Deck's Cards");
 
-
         AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
-
-
-
         for (Card.Suit s = Card.Suit.Club; s <= Card.Suit.Spade; s++)
         {
             for (int i = 1; i <= 13; i++)
@@ -122,8 +122,17 @@ class PrepareCardState : GameManagerState
         joker2.Initialize(joker2_imageObj, Card.Suit.Joker, 2);
         joker1.name = "joker_1";
         joker2.name = "joker_2";
-        m_RootDeck.AddCard(joker1, false);
-        m_RootDeck.AddCard(joker2, false);
+        m_RightTrush.AddCard(joker1, false);
+        m_LeftTrush.AddCard(joker2, false);
+        joker1.TurnIntoFront();
+        joker2.TurnIntoFront();
+
+        foreach (Card card in m_RootDeck.m_cards)
+        {
+            card.transform.position = m_RootDeck.transform.position;
+        }
+        joker1.transform.position = m_RightTrush.transform.position;
+        joker2.transform.position = m_LeftTrush.transform.position;
 
         m_RootDeck.SetViewOrder();
     }
@@ -154,6 +163,15 @@ class PrepareCardState : GameManagerState
             AnimationQueue.Instance.AddAnimToLastIndex(animRetVal1, waitFrames);
             AnimationQueue.Instance.AddAnimToLastIndex(animRetVal2, waitFrames);
         }
+
+        //ジョーカー
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+        m_MyDeck.AddCard(m_RightTrush.DrawCard());
+        m_OppoDeck.AddCard(m_LeftTrush.DrawCard());
+
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+        m_MyDeck.Shuffle();
+        m_OppoDeck.Shuffle();
     }
 
     void MakeInitialHands()
@@ -181,6 +199,7 @@ class PrepareCardState : GameManagerState
         {
             while (
                 dealTrush.GetTopCard().m_suit == Card.Suit.Joker)
+                Debug.Log("joker is invalid for initial Trush.");
             {
                 AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
                 if (dealTrush.GetTopCard().m_suit == Card.Suit.Joker)
@@ -188,6 +207,7 @@ class PrepareCardState : GameManagerState
                     dealDeck.AddCard(dealTrush.DrawCard());
 
                     //TODO ジョーカーが一番上表示になってない?
+                    AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
                     dealDeck.Shuffle();
 
                     //引き直し
@@ -250,7 +270,7 @@ class PlayingState : GameManagerState
     }
     public override void Exit()
     {
-        throw new NotImplementedException();
+        nextState = null;
     }
 
     // --------------------------------------------------------------------------------------
@@ -260,6 +280,7 @@ class PlayingState : GameManagerState
     void StartTurn()
     {
         Debug.Log("Start Turn");
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
         if (m_gameStatus.IsMyTurn())
         {
             m_handlingDeck = m_MyDeck;
@@ -268,6 +289,7 @@ class PlayingState : GameManagerState
             m_subTrush = m_LeftTrush;
             m_drawedToTrushLastTurn = m_drawedToTrushLastMyTurn;
             m_drawedToTrushLastMyTurn = false;
+            AnimationQueue.Instance.AddAnimToLastIndex(m_UIManager.Anim_Transition("My Turn"));
         } else
         {
             m_handlingDeck = m_OppoDeck;
@@ -276,9 +298,11 @@ class PlayingState : GameManagerState
             m_subTrush = m_RightTrush;
             m_drawedToTrushLastTurn = m_drawedToTrushLastOppoTurn;
             m_drawedToTrushLastOppoTurn = false;
+            AnimationQueue.Instance.AddAnimToLastIndex(m_UIManager.Anim_Transition("Opponent Turn"));
         }
 
 
+        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
         WorkQueue.Instance.Stop();
 
         Action commonPressedBehave = () =>
@@ -289,16 +313,19 @@ class PlayingState : GameManagerState
             m_UIManager.DiscardButton.ClearPressedBehave();
             m_UIManager.CombineButton.ClearPressedBehave();
             m_UIManager.CompressButton.ClearPressedBehave();
+            m_UIManager.TurnEndButton.ClearPressedBehave();
             m_UIManager.DrawButton.Disable();
             m_UIManager.DiscardButton.Disable();
             m_UIManager.CombineButton.Disable();
             m_UIManager.CompressButton.Disable();
+            m_UIManager.TurnEndButton.Disable();
         };
 
         m_UIManager.DrawButton.Disable();
         m_UIManager.DiscardButton.Disable();
         m_UIManager.CombineButton.Disable();
         m_UIManager.CompressButton.Disable();
+        
 
         // DrawButton
         if (m_handlingDeck.m_cards.Count != 0 && !(m_drawedToTrushLastTurn && !m_handlingHand.CanAddCard()))
@@ -318,6 +345,7 @@ class PlayingState : GameManagerState
             if (card.IsContinuous(m_LeftTrush.GetTopCard())) canDiscard = true;
             if (card.IsContinuous(m_RightTrush.GetTopCard())) canDiscard = true;
         }
+        if (m_handlingDeck.m_cards.Count == 0) canDiscard = true;
         if(canDiscard)
         {
             m_UIManager.DiscardButton.Enable();
@@ -351,68 +379,113 @@ class PlayingState : GameManagerState
             });
         }
 
+        // TurnEndButton
+        m_UIManager.TurnEndButton.Enable();
+        m_UIManager.TurnEndButton.RegistPressedBehave(() =>
+        {
+            commonPressedBehave();
+            WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
+        });
     }
+
     void DrawFromDeck()
     {
         Debug.Log("DrawFromDeck");
 
-        if (m_handlingDeck.m_cards.Count != 0) // 山札が残ってるとき
+        Debug.Assert(m_handlingDeck.m_cards.Count != 0);
+        Card topCard = m_handlingDeck.GetTopCard();
+        Transform deckTransform = topCard.transform.parent.parent;
+
+        topCard.EnableDrag();
+
+        if (!m_drawedToTrushLastTurn)
         {
-            Card topCard = m_handlingDeck.GetTopCard();
-            Transform deckTransform = topCard.transform.parent.parent;
-
-            topCard.EnableDrag();
-
-            if (!m_drawedToTrushLastTurn)
-            {
-                topCard.RegistBeginDragObserver(m_mainTrush.EnableReceiveDrop);
-                topCard.RegistEndDragObserver(m_mainTrush.DisableReceiveDrop);
-                topCard.RegistBeginDragObserver(m_subTrush.EnableReceiveDrop);
-                topCard.RegistEndDragObserver(m_subTrush.DisableReceiveDrop);
-            }
-            if (m_handlingHand.CanAddCard())
-            {
-                topCard.RegistBeginDragObserver(m_handlingHand.EnableReceiveDrop);
-                topCard.RegistEndDragObserver(m_handlingHand.DisableReceiveDrop);
-            }
-            Card.EnqueueHappenHandlingObserver(topCard.DisableDrag);
-            Card.EnqueueHappenHandlingObserver(topCard.ClearDragObserverList);
+            topCard.RegistBeginDragObserver(m_mainTrush.EnableReceiveDrop);
+            topCard.RegistEndDragObserver(m_mainTrush.DisableReceiveDrop);
+            topCard.RegistBeginDragObserver(m_subTrush.EnableReceiveDrop);
+            topCard.RegistEndDragObserver(m_subTrush.DisableReceiveDrop);
+        }
+        if (m_handlingHand.CanAddCard())
+        {
+            topCard.RegistBeginDragObserver(m_handlingHand.EnableReceiveDrop);
+            topCard.RegistEndDragObserver(m_handlingHand.DisableReceiveDrop);
+        }
+        Card.EnqueueHappenHandlingObserver(topCard.DisableDrag);
+        Card.EnqueueHappenHandlingObserver(topCard.ClearDragObserverList);
 
 
-            WorkQueue.Instance.Stop();
-            Card.EnqueueHappenHandlingObserver(WorkQueue.Instance.Restart);
+        WorkQueue.Instance.Stop();
+        Card.EnqueueHappenHandlingObserver(WorkQueue.Instance.Restart);
 
 
-            Card.EnqueueHappenHandlingObserver(() =>
-            {
-                if (topCard.GetParentHoldCardObject() == m_handlingHand) //手札にドローしたとき
+        Card.EnqueueHappenHandlingObserver(() =>
+        {
+            if (topCard.GetParentHoldCardObject() == m_handlingHand) //手札にドローしたとき
                 {
                     // INITIAL_CARDS_NUMの枚数まで自動で引く
                     int drawNum = Hand.INITIAL_CARDS_NUM - m_handlingHand.m_cards.Count;
-                    if (drawNum > m_handlingDeck.m_cards.Count) drawNum = m_handlingDeck.m_cards.Count;
-                    if (drawNum > 0)
+                if (drawNum > m_handlingDeck.m_cards.Count) drawNum = m_handlingDeck.m_cards.Count;
+                if (drawNum > 0)
+                {
+                    for (int i = 0; i < drawNum; i++)
                     {
-                        for (int i = 0; i < drawNum; i++)
-                        {
-                            AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
-                            m_handlingHand.AddCard(m_handlingDeck.DrawCard());
-                        }
+                        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+                        m_handlingHand.AddCard(m_handlingDeck.DrawCard());
                     }
                 }
+            }
 
-                bool drawedToTrush = 
-                    topCard.GetParentHoldCardObject() == m_mainTrush || topCard.GetParentHoldCardObject() == m_subTrush;
-                if (m_gameStatus.IsMyTurn())
-                {
-                    m_drawedToTrushLastMyTurn = drawedToTrush;
-                }
-                else
-                {
-                    m_drawedToTrushLastOppoTurn = drawedToTrush;
-                }
-            });
+            bool drawedToTrush =
+                topCard.GetParentHoldCardObject() == m_mainTrush || topCard.GetParentHoldCardObject() == m_subTrush;
+            if (m_gameStatus.IsMyTurn())
+            {
+                m_drawedToTrushLastMyTurn = drawedToTrush;
+            }
+            else
+            {
+                m_drawedToTrushLastOppoTurn = drawedToTrush;
+            }
+        });
+    
+        WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
+    }
+
+    bool isFirstDiscard;
+    void DiscardPhase()
+    {
+        Debug.Log("Discard Phase");
+
+        // バースト
+        if (m_handlingHand.m_cards.Count == 0 && m_handlingDeck.m_cards.Count != 0)
+        {
+            Debug.Log("Burst happen.");
+
+            // INITIAL_CARDS_NUMの枚数まで自動で引く
+            int drawNum = Hand.INITIAL_CARDS_NUM;
+            if (drawNum > m_handlingDeck.m_cards.Count) drawNum = m_handlingDeck.m_cards.Count;
+            for (int i = 0; i < drawNum; i++)
+            {
+                AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+                m_handlingHand.AddCard(m_handlingDeck.DrawCard());
+            }
+            WorkQueue.Instance.EnqueueOnceRunFunc(DiscardPhase);
+            return;
         }
-        else //山札がもうないとき
+        // 決着
+        if (m_handlingDeck.m_cards.Count == 0 && m_handlingHand.m_cards.Count == 0)
+        {
+            bool isPlayerWinner = m_gameStatus.IsMyTurn();
+            WorkQueue.Instance.EnqueueOnceRunFunc(() =>
+            {
+                nextState = new ResultState(
+                    m_RootDeck, m_MyDeck, m_OppoDeck, m_RightTrush, m_LeftTrush, m_MyHand, m_OppoHand, m_UIManager, m_gameStatus,
+                    isPlayerWinner);
+            });
+            return;
+        }
+
+        
+        if(isFirstDiscard && m_handlingDeck.m_cards.Count == 0) //山札がもうないとき
         {
             Debug.Log("No cards in Deck");
             foreach (var card in m_handlingHand.m_cards)
@@ -426,19 +499,12 @@ class PlayingState : GameManagerState
                 Card.EnqueueHappenHandlingObserver(card.DisableDrag);
                 Card.EnqueueHappenHandlingObserver(card.ClearDragObserverList);
             }
-            WorkQueue.Instance.Stop();
-            Card.EnqueueHappenHandlingObserver(WorkQueue.Instance.Restart);
+        }
+        else //通常時
+        {
+            SetContinuousRelation(isFirstDiscard);
         }
 
-        //WorkQueue.Instance.EnqueueOnceRunFuncs(DiscardPhase);
-        WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
-    }
-
-    bool isFirstDiscard;
-    void DiscardPhase()
-    {
-        Debug.Log("Discard Phase");
-        SetContinuousRelation(isFirstDiscard);
         isFirstDiscard = false;
 
         bool canDiscard = false;
@@ -458,7 +524,7 @@ class PlayingState : GameManagerState
             m_UIManager.TurnEndButton.Enable();
             m_UIManager.TurnEndButton.RegistPressedBehave(() =>
             {
-                WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
+                WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
                 foreach (var card in m_handlingHand.m_cards)
                 {
                     card.DisableDrag();
@@ -469,18 +535,8 @@ class PlayingState : GameManagerState
         }
         else
         {
-            if (m_handlingDeck.m_cards.Count == 0 && m_handlingHand.m_cards.Count == 0)
-            {
-                bool isPlayerWinner = m_gameStatus.IsMyTurn();
-                // 決着
-                WorkQueue.Instance.EnqueueOnceRunFunc(() =>
-                    {
-                        nextState = new ResultState(
-                            m_RootDeck, m_MyDeck, m_OppoDeck, m_RightTrush, m_LeftTrush, m_MyHand, m_OppoHand, m_UIManager, m_gameStatus,
-                            isPlayerWinner);
-                    });
-            }
-            WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
+            // 強制ターンエンド
+            WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
         }
     }
 
@@ -520,13 +576,13 @@ class PlayingState : GameManagerState
                 card.ClearDragObserverList();
                 Card.ClearHappenHandlingObserver();
             }
-            WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
+            WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
         });
 
         Card.EnqueueHappenHandlingObserver(() =>
         {
             m_handlingHand.SetAllWaitCardModeToSingle();
-            Debug.Log("GetSingleCardNum(): " + m_handlingHand.GetCanCombineOrCompressCardNum());
+            //Debug.Log("GetSingleCardNum(): " + m_handlingHand.GetCanCombineOrCompressCardNum());
 
             if (m_handlingHand.GetCanCombineOrCompressCardNum() >= 2)
             {
@@ -534,7 +590,7 @@ class PlayingState : GameManagerState
             }
             else
             {
-                WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
+                WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
             }
         });
     }
@@ -551,7 +607,7 @@ class PlayingState : GameManagerState
                 if (card.m_mode == Card.MODE.COMPRESSING)
                     card.SetMode(Card.MODE.COMPRESSED);
             }
-            WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
+            WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
             return;
         }
 
@@ -599,7 +655,7 @@ class PlayingState : GameManagerState
                 card.ClearDragObserverList();
                 Card.ClearHappenHandlingObserver();
             }
-            WorkQueue.Instance.EnqueueOnceRunFuncs(TurnEnd);
+            WorkQueue.Instance.EnqueueOnceRunFunc(TurnEnd);
         });
 
         Card.EnqueueHappenHandlingObserver(() =>
@@ -625,6 +681,8 @@ class PlayingState : GameManagerState
 
         foreach (var card in m_handlingHand.m_cards)
         {
+            //Debug.Log("setting " + card.name + " 's continuous relation.");
+
             bool isContinuousWithLeft = card.IsContinuous(m_LeftTrush.GetTopCard());
             bool isContinuousWithRight = card.IsContinuous(m_RightTrush.GetTopCard());
 
@@ -633,6 +691,8 @@ class PlayingState : GameManagerState
 
             if (isContinuousWithLeft || isContinuousWithRight)
             {
+                //Debug.Log(card.name + " is continuous.");
+
                 card.EnableDrag();
                 Card.EnqueueHappenHandlingObserver(card.DisableDrag);
                 Card.EnqueueHappenHandlingObserver(card.ClearDragObserverList);
@@ -661,6 +721,7 @@ class PlayingState : GameManagerState
             int num = card.m_num;
             foreach (Card compareCard in m_handlingHand.m_cards)
             {
+                if (card.m_suit == Card.Suit.Joker || compareCard.m_suit == Card.Suit.Joker) continue;
                 if (card == compareCard) continue;
                 if (compareCard.m_mode == Card.MODE.COMBINED || compareCard.m_mode == Card.MODE.COMPRESSED || 
                     compareCard.m_mode == Card.MODE.COMPRESSING) 
@@ -678,9 +739,6 @@ class PlayingState : GameManagerState
     void TurnEnd()
     {
         Debug.Log("Turn End");
-
-        //TODO:終了判定
-
 
         m_UIManager.TurnEndButton.Disable();
         m_UIManager.TurnEndButton.ClearPressedBehave();
@@ -722,7 +780,7 @@ class ResultState : GameManagerState
     //------------------------------------------------------------------------------------
     public override void Enter()
     {
-        throw new NotImplementedException();
+        m_UIManager.ShowResult(m_isPlayerWinner);
     }
     public override GameManagerState Update()
     {

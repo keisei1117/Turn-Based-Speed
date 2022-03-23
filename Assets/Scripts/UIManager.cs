@@ -17,7 +17,9 @@ public class UIManager : MonoBehaviour
     public Button CompressButton;
     public Button TurnEndButton;
 
-
+    public GameObject TransitionObj;
+    Animator transitionAnimator;
+    public GameObject ResultObj;
 
     public Text m_myOrOppoTurn;
 
@@ -35,6 +37,8 @@ public class UIManager : MonoBehaviour
         CombineButton.Disable();
         CompressButton.Disable();
         TurnEndButton.Disable();
+
+        transitionAnimator = TransitionObj.GetComponent<Animator>();
     }
 
     // Start is called before the first frame update
@@ -58,8 +62,48 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            m_myOrOppoTurn.text = "Opponet's Turn";
+            m_myOrOppoTurn.text = "Opponent's Turn";
         }
     }
+    
+    public IEnumerator<bool> Anim_Transition(string message)
+    {
+        TransitionObj.transform.Find("Text").GetComponent<Text>().text = message;
+        transitionAnimator.SetBool("active", true);
 
+        int loss = 0;
+
+        //Debug.Log("normlizedTime" + transitionAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+        while(!transitionAnimator.GetCurrentAnimatorStateInfo(0).IsName("TransitionAnimation")){
+            loss++;
+            yield return false;
+        }
+
+        //Debug.Log("loss frame: " + loss);
+        //Debug.Log("normlizedTime" + transitionAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+        while (transitionAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
+        {
+            //Debug.Log("normlizedTime" + transitionAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+            yield return false;
+        }
+        transitionAnimator.SetBool("active", false);
+        yield return true;
+    }
+
+    public void ShowResult(bool isPlayerWinner)
+    {
+        ResultObj.SetActive(true);
+        if(isPlayerWinner)
+        {
+            ResultObj.transform.Find("Text").GetComponent<Text>().text = "You Win";
+            ResultObj.transform.Find("RedLine").gameObject.SetActive(true);
+            ResultObj.transform.Find("BlueLine").gameObject.SetActive(false);
+        }
+        else
+        {
+            ResultObj.transform.Find("Text").GetComponent<Text>().text = "You Lose";
+            ResultObj.transform.Find("RedLine").gameObject.SetActive(false);
+            ResultObj.transform.Find("BlueLine").gameObject.SetActive(true);
+        }
+    }
 }

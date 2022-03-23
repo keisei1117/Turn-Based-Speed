@@ -15,7 +15,7 @@ public class Deck : HoldCardObject
         m_cards = new List<Card>();
         m_canDrop = false;
         DisableReceiveDrop();
-        m_isFront = true;
+        m_isFront = false;
     }
 
     // Start is called before the first frame update
@@ -78,14 +78,17 @@ public class Deck : HoldCardObject
         Debug.Log(str);
     }
 
+    static int randomSeed = 0;
     //シャッフルする　アニメーションも登録する
     public void Shuffle()
     {
+        randomSeed++;
         //Debug.Log(this.name + ": Shuffling");
+        //Debug.Log("Random seed is " + System.DateTime.Now.Millisecond * randomSeed);
         List<Card> ShuffledCards = new List<Card>();
         while (m_cards.Count != 0)
         {
-            Random.InitState(System.DateTime.Now.Millisecond);
+            Random.InitState(System.DateTime.Now.Millisecond * randomSeed);
             int i = Random.Range(0, m_cards.Count);
 
             ShuffledCards.Add(m_cards[i]);
@@ -94,7 +97,6 @@ public class Deck : HoldCardObject
 
         m_cards = ShuffledCards;
 
-        AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
         AnimationQueue.Instance.AddAnimToLastIndex(Anim_Shuffle());
     }
 
@@ -110,6 +112,11 @@ public class Deck : HoldCardObject
         Card animCard1 = m_cards[m_cards.Count - 1];
         Card animCard2 = m_cards[m_cards.Count - 2];
         Card animCard3 = m_cards[m_cards.Count - 3];
+
+        Transform topLayer = GameManager.Instance.m_TopLayerCanvas.transform;
+        animCard1.transform.SetParent(topLayer);
+        animCard2.transform.SetParent(topLayer);
+        animCard3.transform.SetParent(topLayer);
 
         const float distance = 0.2f;
         const int loopCount = 10;
@@ -139,6 +146,13 @@ public class Deck : HoldCardObject
             animCard1.transform.SetAsLastSibling();
         }
         //Debug.Log("Anim_Shuffle end");
+
+        Transform originLayer = this.transform.Find("Canvas");
+        animCard1.transform.SetParent(originLayer);
+        animCard2.transform.SetParent(originLayer);
+        animCard3.transform.SetParent(originLayer);
+
+        SetViewOrder();
         yield return true;
     }
 
@@ -146,7 +160,7 @@ public class Deck : HoldCardObject
     {
         for (int i = 0; i < m_cards.Count; i++)
         {
-            m_cards[i].transform.SetAsFirstSibling();
+            m_cards[i].transform.SetAsLastSibling();
         }
     }
 

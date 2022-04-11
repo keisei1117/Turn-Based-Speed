@@ -23,19 +23,19 @@ public class Trush : Deck
     {
     }
 
-    public void DoDiscardAnim(bool ifTurnover)
-    {
-        if (ifTurnover)
-        {
-            AnimationQueue.Instance.AddAnimToLastIndex(
-                m_cards[m_cards.Count - 1].Anim_StraightLineMoveWithTurnOver(this.transform.position));
-        }
-        else
-        {
-            AnimationQueue.Instance.AddAnimToLastIndex(
-                m_cards[m_cards.Count - 1].Anim_StraightLineMove(this.transform.position));
-        }
-    }
+    //public void DoDiscardAnim(bool ifTurnover)
+    //{
+    //    if (ifTurnover)
+    //    {
+    //        AnimationQueue.Instance.AddAnimToLastIndex(
+    //            m_cards[m_cards.Count - 1].Anim_StraightLineMoveWithTurnOver(this.transform.position));
+    //    }
+    //    else
+    //    {
+    //        AnimationQueue.Instance.AddAnimToLastIndex(
+    //            m_cards[m_cards.Count - 1].Anim_StraightLineMove(this.transform.position));
+    //    }
+    //}
 
     public override void AddCard(Card card, bool doAnim = true)
     {

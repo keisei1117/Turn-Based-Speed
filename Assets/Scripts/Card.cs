@@ -408,6 +408,7 @@ public class Card : HoldCardObject,
             Debug.Assert(m_cards.Count == 1);
 
             m_num = (this.m_num + m_cards[0].m_num) % 13;
+            if (m_num == 0) m_num = 13;
             this.SetMode(MODE.COMBINED);
             card.SetMode(MODE.CONTAINED);
 

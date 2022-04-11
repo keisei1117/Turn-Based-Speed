@@ -197,22 +197,25 @@ class PrepareCardState : GameManagerState
         Trush dealTrush = m_RightTrush;
         for (int i = 0; i < 2; ++i)
         {
-            while (
-                dealTrush.GetTopCard().m_suit == Card.Suit.Joker)
-                Debug.Log("joker is invalid for initial Trush.");
+            while (dealTrush.GetTopCard().m_suit == Card.Suit.Joker)
             {
-                AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+                Debug.Log("joker is invalid for initial Trush.");
+
                 if (dealTrush.GetTopCard().m_suit == Card.Suit.Joker)
                 {
-                    dealDeck.AddCard(dealTrush.DrawCard());
+                    Card joker = dealTrush.DrawCard();
+                    dealDeck.AddCard(joker, false);
+                    AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
+                    AnimationQueue.Instance.AddAnimToLastIndex(joker.Anim_StraightLineMoveWithTurnOver(dealDeck.gameObject.transform.position), 20);
 
-                    //TODO ジョーカーが一番上表示になってない?
                     AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
                     dealDeck.Shuffle();
 
                     //引き直し
                     AnimationQueue.Instance.CreateNewEmptyAnimListToEnd();
-                    dealTrush.AddCard(dealDeck.DrawCard());
+                    Card newDrawCard = dealDeck.DrawCard();
+                    dealTrush.AddCard(newDrawCard, false);
+                    AnimationQueue.Instance.AddAnimToLastIndex(newDrawCard.Anim_StraightLineMoveWithTurnOver(dealTrush.gameObject.transform.position));
                 }
             }
             dealDeck = m_OppoDeck;
